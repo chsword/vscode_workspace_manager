@@ -309,19 +309,20 @@ body {
     padding: var(--item-padding);
     margin-bottom: 12px;
     border: 1px solid var(--vscode-sideBar-border);
-    border-radius: 8px;
-    background-color: var(--vscode-sideBarSectionHeader-background);
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--vscode-sideBarSectionHeader-background) 0%, rgba(255, 255, 255, 0.02) 100%);
     cursor: pointer;
     transition: all var(--transition-duration);
     position: relative;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(10px);
 }
 
 .workspace-item:hover {
-    background-color: var(--vscode-list-hoverBackground);
+    background: linear-gradient(135deg, var(--vscode-list-hoverBackground) 0%, rgba(255, 255, 255, 0.05) 100%);
     border-color: var(--vscode-list-focusOutline);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .workspace-item.pinned {
@@ -351,27 +352,34 @@ body {
 }
 
 .workspace-type {
-    font-size: 11px;
-    font-weight: 500;
-    padding: 4px 8px;
-    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 16px;
     display: inline-flex;
     align-items: center;
     gap: 4px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
     transition: all var(--transition-duration);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
 }
 
 .workspace-actions {
     display: flex;
-    gap: 4px;
-    opacity: 0.7;
-    transition: opacity var(--transition-duration);
+    gap: 6px;
+    opacity: 0.8;
+    transition: all var(--transition-duration);
+    background: rgba(0, 0, 0, 0.02);
+    padding: 4px;
+    border-radius: 8px;
+    backdrop-filter: blur(5px);
 }
 
 .workspace-item:hover .workspace-actions {
     opacity: 1;
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .action-btn {
@@ -393,27 +401,50 @@ body {
 
 .action-btn:hover {
     background-color: var(--vscode-toolbar-hoverBackground);
-    transform: scale(1.1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px) scale(1.08);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
 }
 
 .action-btn.open-btn {
-    background-color: var(--vscode-button-background);
+    background: linear-gradient(135deg, var(--vscode-button-background) 0%, var(--vscode-focusBorder) 100%);
     color: var(--vscode-button-foreground);
     border: 1px solid var(--vscode-button-border);
     margin-right: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    position: relative;
+    overflow: hidden;
+    font-weight: 600;
+    min-width: 32px;
+    height: 32px;
+}
+
+.action-btn.open-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
 }
 
 .action-btn.open-btn:hover {
-    background-color: var(--vscode-button-hoverBackground);
-    border-color: var(--vscode-button-border);
-    transform: scale(1.1);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(135deg, var(--vscode-button-hoverBackground) 0%, var(--vscode-focusBorder) 100%);
+    border-color: var(--vscode-focusBorder);
+    transform: translateY(-1px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.action-btn.open-btn:hover::before {
+    left: 100%;
 }
 
 .action-btn.open-btn:active {
-    background-color: var(--vscode-button-background);
-    transform: scale(0.95);
+    background: linear-gradient(135deg, var(--vscode-button-background) 0%, var(--vscode-focusBorder) 100%);
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .workspace-description {
