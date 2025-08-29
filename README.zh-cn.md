@@ -120,8 +120,8 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/your-username/vscode-workspace-manager.git
-cd vscode-workspace-manager
+git clone https://github.com/chsword/vscode_workspace_manager.git
+cd vscode_workspace_manager
 
 # 安装依赖
 npm install

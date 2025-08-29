@@ -120,8 +120,8 @@ The status bar shows useful statistics:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/vscode-workspace-manager.git
-cd vscode-workspace-manager
+git clone https://github.com/chsword/vscode_workspace_manager.git
+cd vscode_workspace_manager
 
 # Install dependencies
 npm install
@@ -165,8 +165,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🐛 Issues and Support
 
-- **Bug Reports**: [GitHub Issues](https://github.com/your-username/vscode-workspace-manager/issues)
-- **Feature Requests**: [GitHub Discussions](https://github.com/your-username/vscode-workspace-manager/discussions)
+- **Bug Reports**: [GitHub Issues](https://github.com/chsword/vscode_workspace_manager/issues)
+- **Feature Requests**: [GitHub Discussions](https://github.com/chsword/vscode_workspace_manager/discussions)
 - **Support**: Check the [FAQ](docs/FAQ.md) or open an issue
 
 ## 🙏 Acknowledgments
