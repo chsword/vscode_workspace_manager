@@ -165,8 +165,8 @@ vsce package
 
 ## 🐛 问题和支持
 
-- **错误报告**：[GitHub Issues](https://github.com/your-username/vscode-workspace-manager/issues)
-- **功能请求**：[GitHub Discussions](https://github.com/your-username/vscode-workspace-manager/discussions)
+- **错误报告**：[GitHub Issues](https://github.com/chsword/vscode_workspace_manager/issues)
+- **功能请求**：[GitHub Discussions](https://github.com/chsword/vscode_workspace_manager/discussions)
 - **支持**：查看[FAQ](docs/FAQ.md)或提交issue
 
 ## 🙏 致谢
