@@ -246,7 +246,13 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
                 <button class="filter-btn" data-location="wsl">🐧 WSL</button>
                 <button class="filter-btn" data-location="remote">🌐 Remote</button>
             </div>
-            
+
+            <div class="type-filters">
+                <button class="type-btn active" data-type="all">📄 All Types</button>
+                <button class="type-btn" data-type="workspace">📋 Workspace</button>
+                <button class="type-btn" data-type="folder">📁 Folder</button>
+            </div>
+
             <div class="view-filters">
                 <button class="view-btn active" data-view="all">📁 All</button>
                 <button class="view-btn" data-view="recent">📋 Recent</button>

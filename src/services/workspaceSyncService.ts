@@ -1164,9 +1164,14 @@ export class WorkspaceSyncService {
     /**
      * Detect workspace type
      */
-    private detectType(workspacePath: string, stats: fs.Stats): 'workspace' | 'folder' | 'file' {
+    private detectType(workspacePath: string, stats: fs.Stats): 'workspace' | 'folder' {
         if (!stats.isDirectory()) {
-            return 'file';
+            // Check if it's a .code-workspace file
+            if (path.extname(workspacePath) === '.code-workspace') {
+                return 'workspace';
+            }
+            // For other files, treat as folder (they shouldn't be workspaces)
+            return 'folder';
         }
 
         // Check if it's a VS Code workspace

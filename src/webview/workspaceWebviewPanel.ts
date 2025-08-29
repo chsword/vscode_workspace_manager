@@ -84,10 +84,17 @@ export class WorkspaceWebviewPanel {
             const workspaces = await this.workspaceManager.getWorkspaces();
             const tags = await this.workspaceManager.getTags();
             
+            // Get auto sync configuration
+            const config = vscode.workspace.getConfiguration('workspaceManager');
+            const autoSync = config.get<boolean>('autoSync', true);
+            
             this.panel.webview.postMessage({
                 type: 'updateWorkspaces',
                 workspaces,
-                tags
+                tags,
+                config: {
+                    autoSync
+                }
             });
         } catch (error) {
             console.error('Failed to update webview panel:', error);
@@ -176,6 +183,13 @@ export class WorkspaceWebviewPanel {
                 }
             }
 
+            // Type filter
+            if (filter.type && filter.type !== 'all') {
+                if (workspace.type !== filter.type) {
+                    return false;
+                }
+            }
+
             // View filter
             if (filter.view) {
                 switch (filter.view) {
@@ -206,8 +220,8 @@ export class WorkspaceWebviewPanel {
 
             // Tag filter
             if (filter.tags && filter.tags.length > 0) {
-                const hasMatchingTag = filter.tags.some((tag: string) => 
-                    workspace.tags.some((workspaceTag: any) => workspaceTag.name === tag)
+                const hasMatchingTag = filter.tags.some((tag: string) =>
+                    workspace.tags.includes(tag)
                 );
                 if (!hasMatchingTag) {
                     return false;
@@ -215,13 +229,13 @@ export class WorkspaceWebviewPanel {
             }
 
             // Search filter
-            if (filter.search) {
-                const searchTerm = filter.search.toLowerCase();
+            if (filter.searchText) {
+                const searchTerm = filter.searchText.toLowerCase();
                 const matchesName = workspace.name.toLowerCase().includes(searchTerm);
                 const matchesPath = workspace.path.toLowerCase().includes(searchTerm);
                 const matchesDescription = workspace.description?.toLowerCase().includes(searchTerm);
-                const matchesTags = workspace.tags.some((tag: any) => 
-                    tag.name.toLowerCase().includes(searchTerm)
+                const matchesTags = workspace.tags.some((tag: string) =>
+                    tag.toLowerCase().includes(searchTerm)
                 );
                 
                 if (!matchesName && !matchesPath && !matchesDescription && !matchesTags) {
@@ -307,7 +321,13 @@ export class WorkspaceWebviewPanel {
                 <button class="filter-btn" data-location="wsl">🐧 WSL</button>
                 <button class="filter-btn" data-location="remote">🌐 Remote</button>
             </div>
-            
+
+            <div class="type-filters">
+                <button class="type-btn active" data-type="all">📄 All Types</button>
+                <button class="type-btn" data-type="workspace">📋 Workspace</button>
+                <button class="type-btn" data-type="folder">📁 Folder</button>
+            </div>
+
             <div class="view-filters">
                 <button class="view-btn active" data-view="all">📁 All</button>
                 <button class="view-btn" data-view="recent">📋 Recent</button>

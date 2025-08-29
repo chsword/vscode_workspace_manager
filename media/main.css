@@ -1,10 +1,10 @@
 /* VS Code Theme Variables */
 :root {
     --vscode-font-family: var(--vscode-font-family);
-    --container-padding: 10px;
-    --item-padding: 12px;
-    --border-radius: 6px;
-    --transition-duration: 0.2s;
+    --container-padding: 12px;
+    --item-padding: 14px;
+    --border-radius: 8px;
+    --transition-duration: 0.3s;
 }
 
 /* Reset and Base Styles */
@@ -26,10 +26,21 @@ body {
 .header {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
     padding: var(--container-padding);
     border-bottom: 1px solid var(--vscode-sideBar-border);
-    background-color: var(--vscode-sideBarSectionHeader-background);
+    background: linear-gradient(135deg, var(--vscode-sideBarSectionHeader-background) 0%, var(--vscode-sideBar-background) 100%);
+    position: relative;
+}
+
+.header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--vscode-sideBar-border), transparent);
 }
 
 .search-container {
@@ -43,41 +54,47 @@ body {
 
 #searchInput {
     width: 100%;
-    padding: 6px 12px;
-    padding-right: 32px; /* Make room for clear button */
+    padding: 8px 16px;
+    padding-right: 36px;
     border: 1px solid var(--vscode-input-border);
-    border-radius: var(--border-radius);
+    border-radius: 20px;
     background-color: var(--vscode-input-background);
     color: var(--vscode-input-foreground);
     font-size: 13px;
     box-sizing: border-box;
+    transition: all var(--transition-duration);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 #searchInput:focus {
     outline: none;
     border-color: var(--vscode-focusBorder);
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    background-color: var(--vscode-input-background);
 }
 
 .clear-search-btn {
     position: absolute;
-    right: 4px;
+    right: 6px;
     top: 50%;
     transform: translateY(-50%);
     background: none;
     border: none;
     color: var(--vscode-input-foreground);
     cursor: pointer;
-    padding: 2px;
+    padding: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 2px;
-    width: 20px;
-    height: 20px;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    transition: all var(--transition-duration);
 }
 
 .clear-search-btn:hover {
     background-color: var(--vscode-toolbar-hoverBackground);
+    transform: translateY(-50%) scale(1.1);
 }
 
 .clear-search-btn .codicon {
@@ -90,26 +107,35 @@ body {
 }
 
 .icon-button {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border: none;
-    border-radius: var(--border-radius);
+    border-radius: 8px;
     background-color: transparent;
     color: var(--vscode-icon-foreground);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color var(--transition-duration);
+    transition: all var(--transition-duration);
+    position: relative;
+    overflow: hidden;
 }
 
 .icon-button:hover {
     background-color: var(--vscode-toolbar-hoverBackground);
+    transform: scale(1.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.icon-button:active {
+    transform: scale(0.95);
 }
 
 .icon-button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    transform: none;
 }
 
 .icon-button .codicon-loading {
@@ -126,9 +152,24 @@ body {
     background-color: var(--vscode-button-secondaryBackground);
 }
 
-#autoSyncBtn.active {
-    background-color: var(--vscode-button-background);
-    color: var(--vscode-button-foreground);
+#autoSyncBtn.active .codicon {
+    /* 只有图标旋转，按钮不旋转 */
+    animation: syncRotate 2s linear infinite;
+}
+
+#autoSyncBtn.disabled {
+    /* 禁用时的视觉效果 */
+    opacity: 0.5;
+}
+
+/* 同步图标旋转动画 */
+@keyframes syncRotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Filter Styles */
@@ -137,31 +178,55 @@ body {
     border-bottom: 1px solid var(--vscode-sideBar-border);
 }
 
-.location-filters, .view-filters {
+.location-filters, .view-filters, .type-filters {
     display: flex;
     gap: 4px;
     margin-bottom: 8px;
 }
 
-.filter-btn, .view-btn {
-    padding: 4px 8px;
+.filter-btn, .view-btn, .type-btn {
+    padding: 6px 12px;
     border: 1px solid var(--vscode-button-border);
-    border-radius: var(--border-radius);
+    border-radius: 20px;
     background-color: var(--vscode-button-secondaryBackground);
     color: var(--vscode-button-secondaryForeground);
     cursor: pointer;
     font-size: 11px;
+    font-weight: 500;
     transition: all var(--transition-duration);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.filter-btn:hover, .view-btn:hover {
+.filter-btn:hover, .view-btn:hover, .type-btn:hover {
     background-color: var(--vscode-button-secondaryHoverBackground);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
-.filter-btn.active, .view-btn.active {
-    background-color: var(--vscode-button-background);
+.filter-btn.active, .view-btn.active, .type-btn.active {
+    background: linear-gradient(135deg, var(--vscode-button-background) 0%, var(--vscode-focusBorder) 100%);
     color: var(--vscode-button-foreground);
     border-color: var(--vscode-button-background);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+}
+
+.filter-btn.active::before, .view-btn.active::before, .type-btn.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
 }
 
 /* Tag Filters */
@@ -173,29 +238,63 @@ body {
 .tag-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 4px;
+    gap: 6px;
+    margin-top: 6px;
 }
 
 .tag-chip {
-    padding: 2px 6px;
-    border-radius: 10px;
+    padding: 4px 8px;
+    border-radius: 12px;
     font-size: 10px;
     cursor: pointer;
-    border: 1px solid transparent;
+    border: 1px solid;
     transition: all var(--transition-duration);
     display: inline-flex;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
+    position: relative;
+    min-width: fit-content;
+    white-space: nowrap;
+    padding-left: 16px;
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .tag-chip:hover {
-    opacity: 0.8;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* 未选中状态的边框颜色 */
+.tag-chip:not(.selected) {
+    border-color: rgba(128, 128, 128, 0.4);
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
 }
 
 .tag-chip.selected {
-    border-color: var(--vscode-focusBorder);
-    box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+    background: linear-gradient(135deg, var(--vscode-textLink-foreground) 0%, var(--vscode-textLink-activeForeground) 100%);
+    color: var(--vscode-button-secondaryBackground) !important;
+    border-color: var(--vscode-textLink-foreground) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-weight: 600;
+    transform: translateY(-1px);
+}
+
+.tag-chip.selected::before {
+    content: "✓";
+    font-size: 9px;
+    opacity: 0.9;
+    position: absolute;
+    left: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.tag-chip.selected:hover {
+    background: linear-gradient(135deg, var(--vscode-textLink-activeForeground) 0%, var(--vscode-textLink-foreground) 100%);
+    color: var(--vscode-button-secondaryBackground) !important;
 }
 
 /* Content Area */
@@ -208,52 +307,66 @@ body {
 /* Workspace Item Styles */
 .workspace-item {
     padding: var(--item-padding);
-    margin-bottom: 8px;
+    margin-bottom: 12px;
     border: 1px solid var(--vscode-sideBar-border);
-    border-radius: var(--border-radius);
+    border-radius: 8px;
     background-color: var(--vscode-sideBarSectionHeader-background);
     cursor: pointer;
     transition: all var(--transition-duration);
     position: relative;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .workspace-item:hover {
     background-color: var(--vscode-list-hoverBackground);
-    border-color: var(--vscode-list-hoverBackground);
+    border-color: var(--vscode-list-focusOutline);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .workspace-item.pinned {
-    border-left: 3px solid var(--vscode-charts-orange);
+    border-left: 4px solid var(--vscode-charts-orange);
+    background: linear-gradient(135deg, var(--vscode-sideBarSectionHeader-background) 0%, rgba(255, 193, 7, 0.05) 100%);
 }
 
 .workspace-item.favorite {
-    border-left: 3px solid var(--vscode-charts-yellow);
+    border-left: 4px solid var(--vscode-charts-yellow);
+    background: linear-gradient(135deg, var(--vscode-sideBarSectionHeader-background) 0%, rgba(255, 235, 59, 0.05) 100%);
 }
 
 .workspace-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
 }
 
 .workspace-name {
-    font-weight: 500;
+    font-weight: 600;
     color: var(--vscode-sideBarTitle-foreground);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    font-size: 14px;
 }
 
 .workspace-type {
-    font-size: 12px;
-    opacity: 0.8;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all var(--transition-duration);
 }
 
 .workspace-actions {
     display: flex;
-    gap: 6px;
-    opacity: 1;
+    gap: 4px;
+    opacity: 0.7;
     transition: opacity var(--transition-duration);
 }
 
@@ -262,10 +375,10 @@ body {
 }
 
 .action-btn {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     background-color: transparent;
     color: var(--vscode-icon-foreground);
     cursor: pointer;
@@ -273,10 +386,19 @@ body {
     align-items: center;
     justify-content: center;
     font-size: 14px;
+    transition: all var(--transition-duration);
+    position: relative;
+    overflow: hidden;
 }
 
 .action-btn:hover {
     background-color: var(--vscode-toolbar-hoverBackground);
+    transform: scale(1.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.action-btn:active {
+    transform: scale(0.95);
 }
 
 .workspace-description {
@@ -309,17 +431,31 @@ body {
 
 .workspace-location {
     font-size: 10px;
-    padding: 2px 4px;
-    border-radius: 3px;
+    padding: 3px 6px;
+    border-radius: 8px;
     background-color: var(--vscode-badge-background);
     color: var(--vscode-badge-foreground);
+    font-weight: 500;
+    border: 1px solid var(--vscode-badge-background);
+    transition: all var(--transition-duration);
+}
+
+.workspace-location:hover {
+    background-color: var(--vscode-list-hoverBackground);
+    border-color: var(--vscode-list-focusOutline);
 }
 
 .workspace-tag-inline {
     font-size: 9px;
-    padding: 1px 4px;
-    border-radius: 6px;
+    padding: 2px 6px;
+    border-radius: 8px;
     border: 1px solid;
+    font-weight: 500;
+    transition: all var(--transition-duration);
+}
+
+.workspace-tag-inline:hover {
+    transform: scale(1.05);
 }
 
 .workspace-time {
@@ -329,15 +465,51 @@ body {
 
 /* Workspace type colors and icons */
 .workspace-type-workspace {
-    color: var(--vscode-charts-blue);
+    background: linear-gradient(135deg, var(--vscode-charts-blue) 0%, #1976d2 100%);
+    color: white;
+    box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.workspace-type-workspace::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.workspace-type-workspace:hover::before {
+    left: 100%;
 }
 
 .workspace-type-folder {
-    color: var(--vscode-charts-yellow);
+    background: linear-gradient(135deg, var(--vscode-charts-yellow) 0%, #f57c00 100%);
+    color: white;
+    box-shadow: 0 2px 4px rgba(245, 124, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
 }
 
-.workspace-type-file {
-    color: var(--vscode-charts-green);
+.workspace-type-folder::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.workspace-type-folder:hover::before {
+    left: 100%;
 }
 
 /* Statistics */
@@ -347,6 +519,18 @@ body {
     font-size: 11px;
     color: var(--vscode-descriptionForeground);
     text-align: center;
+    background: linear-gradient(135deg, var(--vscode-sideBar-background) 0%, var(--vscode-sideBarSectionHeader-background) 100%);
+    position: relative;
+}
+
+.statistics::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--vscode-sideBar-border), transparent);
 }
 
 /* Loading State */
@@ -355,8 +539,21 @@ body {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 20px;
+    padding: 40px 20px;
     color: var(--vscode-descriptionForeground);
+    background: linear-gradient(135deg, var(--vscode-sideBar-background) 0%, var(--vscode-sideBarSectionHeader-background) 100%);
+    border-radius: 8px;
+    margin: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.loading .codicon-loading {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .codicon {

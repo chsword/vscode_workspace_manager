@@ -48,6 +48,11 @@ export class WorkspaceManager {
             workspaces = workspaces.filter(w => w.location.type === filter.location);
         }
 
+        // Apply type filter
+        if (filter.type && filter.type !== 'all') {
+            workspaces = workspaces.filter(w => w.type === filter.type);
+        }
+
         // Apply view filter
         if (filter.view && filter.view !== 'all') {
             const now = new Date();
@@ -102,20 +107,54 @@ export class WorkspaceManager {
         }
 
         try {
-            const uri = vscode.Uri.file(workspace.path);
-            
-            if (workspace.type === 'file') {
-                // Open single file
-                await vscode.commands.executeCommand('vscode.open', uri, { forceNewWindow: newWindow });
+            let uri: vscode.Uri;
+
+            if (workspace.location.type === 'wsl') {
+                // For WSL workspaces, construct the proper vscode-remote URI
+                let wslPath = workspace.path;
+
+                // Extract WSL distribution name
+                const distro = workspace.location.details?.wslDistribution || 'default';
+
+                // Convert Windows WSL path to Unix path for vscode-remote
+                if (wslPath.startsWith('\\\\wsl$\\')) {
+                    // \\wsl$\Ubuntu\home\user\project -> /home/user/project
+                    const parts = wslPath.split('\\');
+                    if (parts.length >= 4) {
+                        wslPath = '/' + parts.slice(3).join('/');
+                    }
+                } else if (wslPath.startsWith('/mnt/wsl/')) {
+                    // /mnt/wsl/Ubuntu/home/user/project -> /home/user/project
+                    wslPath = wslPath.replace('/mnt/wsl/' + distro, '');
+                } else if (wslPath.includes('\\')) {
+                    // Convert backslashes to forward slashes
+                    wslPath = wslPath.replace(/\\/g, '/');
+                }
+
+                // Ensure path starts with /
+                if (!wslPath.startsWith('/')) {
+                    wslPath = '/' + wslPath;
+                }
+
+                const wslUri = `vscode-remote://wsl+${distro}${wslPath}`;
+                uri = vscode.Uri.parse(wslUri);
+                console.log('Opening WSL workspace:', wslUri, 'from path:', workspace.path);
+            } else if (workspace.location.type === 'remote') {
+                // For remote workspaces, parse the URI as-is
+                uri = vscode.Uri.parse(workspace.path);
+                console.log('Opening remote workspace:', workspace.path);
             } else {
-                // Open folder or workspace
-                await vscode.commands.executeCommand('vscode.openFolder', uri, { forceNewWindow: newWindow });
+                // For local workspaces, use file URI
+                uri = vscode.Uri.file(workspace.path);
             }
+
+            // Open folder or workspace
+            await vscode.commands.executeCommand('vscode.openFolder', uri, { forceNewWindow: newWindow });
 
             // Update last opened time
             workspace.lastOpened = new Date();
             await this.storage.saveWorkspace(workspace);
-            
+
             // Increment tag usage
             for (const tagName of workspace.tags) {
                 await this.storage.incrementTagUsage(tagName);
@@ -123,7 +162,19 @@ export class WorkspaceManager {
 
             this.fireWorkspacesChanged();
         } catch (error) {
-            vscode.window.showErrorMessage(`Failed to open workspace: ${error}`);
+            console.error('Failed to open workspace:', error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            vscode.window.showErrorMessage(`Failed to open workspace "${workspace.name}": ${errorMessage}`);
+
+            // Provide helpful hints for common issues
+            if (workspace.location.type === 'wsl') {
+                vscode.window.showInformationMessage(
+                    'WSL workspace opening failed. Make sure:\n' +
+                    '1. WSL extension is installed\n' +
+                    '2. WSL distribution is running\n' +
+                    '3. VS Code Remote WSL extension is installed'
+                );
+            }
         }
     }
 

@@ -112,6 +112,9 @@ function registerCommands(
                 syncService.stopAutoSync();
                 vscode.window.showInformationMessage('自动同步已禁用');
             }
+
+            // 通知所有打开的webview更新状态
+            WorkspaceWebviewPanel.refresh();
         }),
 
         // 新增：配置同步间隔

@@ -13,6 +13,7 @@
     let currentFilter = {
         searchText: '',
         location: 'all',
+        type: 'all',
         view: 'all',
         tags: []
     };
@@ -114,6 +115,16 @@
             });
         });
 
+        // Type filters
+        document.querySelectorAll('.type-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const type = e.target.dataset.type;
+                setActiveFilter('.type-btn', e.target);
+                currentFilter.type = type;
+                filterWorkspaces();
+            });
+        });
+
         // Context menu handling
         document.addEventListener('click', (e) => {
             // Close any open context menus
@@ -164,12 +175,14 @@
             const icon = autoSyncBtn.querySelector('.codicon');
             if (icon) {
                 if (isEnabled) {
-                    icon.className = 'codicon codicon-sync';
+                    icon.className = 'codicon codicon-loading';
+                    autoSyncBtn.classList.remove('disabled');
                     autoSyncBtn.classList.add('active');
                     autoSyncBtn.title = 'Auto Sync Enabled - Click to disable';
                 } else {
-                    icon.className = 'codicon codicon-sync-ignored';
+                    icon.className = 'codicon codicon-sync';
                     autoSyncBtn.classList.remove('active');
+                    autoSyncBtn.classList.add('disabled');
                     autoSyncBtn.title = 'Auto Sync Disabled - Click to enable';
                 }
             }
@@ -208,10 +221,9 @@
                 html += `
                     <span class="tag-chip ${isSelected ? 'selected' : ''}" 
                           data-tag="${tag.name}" 
-                          style="background-color: ${tag.color}20; color: ${tag.color}; border-color: ${tag.color}40;"
+                          style="background-color: ${tag.color}20; color: ${tag.color};"
                           title="${tag.description || tag.name}">
-                        ${tag.name}
-                        ${tag.usageCount > 0 ? `<span style="opacity: 0.7;">(${tag.usageCount})</span>` : ''}
+                        <span class="tag-text">${tag.name}${tag.usageCount > 0 ? ` (${tag.usageCount})` : ''}</span>
                     </span>
                 `;
             });
@@ -226,10 +238,9 @@
                 html += `
                     <span class="tag-chip ${isSelected ? 'selected' : ''}" 
                           data-tag="${tag.name}" 
-                          style="background-color: ${tag.color}20; color: ${tag.color}; border-color: ${tag.color}40;"
+                          style="background-color: ${tag.color}20; color: ${tag.color};"
                           title="${tag.description || tag.name}">
-                        ${tag.name}
-                        ${tag.usageCount > 0 ? `<span style="opacity: 0.7;">(${tag.usageCount})</span>` : ''}
+                        <span class="tag-text">${tag.name}${tag.usageCount > 0 ? ` (${tag.usageCount})` : ''}</span>
                     </span>
                 `;
             });
@@ -242,9 +253,13 @@
         tagFilters.querySelectorAll('.tag-chip').forEach(chip => {
             chip.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const tagName = e.target.dataset.tag;
+                // Find the tag chip element (in case clicked on child elements)
+                const tagChip = e.target.closest('.tag-chip');
+                const tagName = tagChip ? tagChip.dataset.tag : e.target.dataset.tag;
                 console.log('Tag clicked:', tagName); // Debug log
-                toggleTagFilter(tagName);
+                if (tagName) {
+                    toggleTagFilter(tagName);
+                }
             });
         });
     }
@@ -530,8 +545,7 @@
     function getTypeIcon(type) {
         const icons = {
             'workspace': '📂',
-            'folder': '📁',
-            'file': '📄'
+            'folder': '📁'
         };
         return icons[type] || '📁';
     }

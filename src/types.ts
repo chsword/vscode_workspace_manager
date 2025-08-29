@@ -5,7 +5,7 @@ export interface WorkspaceItem {
     id: string;
     name: string;
     path: string;
-    type: 'workspace' | 'folder' | 'file';
+    type: 'workspace' | 'folder';
     location: WorkspaceLocation;
     lastOpened: Date;
     isFavorite: boolean;
@@ -61,7 +61,7 @@ export interface WorkspaceFilter {
     tags?: string[];
     location?: string;
     view?: string;
-    type?: ('workspace' | 'folder' | 'file')[];
+    type?: string;
     showFavoritesOnly?: boolean;
     showPinnedOnly?: boolean;
 }
