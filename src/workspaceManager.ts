@@ -25,7 +25,7 @@ export class WorkspaceManager {
             return workspaces;
         }
 
-        // Apply filters
+        // Apply search filter
         if (filter.searchText) {
             const searchLower = filter.searchText.toLowerCase();
             workspaces = workspaces.filter(w => 
@@ -36,24 +36,47 @@ export class WorkspaceManager {
             );
         }
 
+        // Apply tag filter
         if (filter.tags && filter.tags.length > 0) {
             workspaces = workspaces.filter(w => 
                 filter.tags!.some(tag => w.tags.includes(tag))
             );
         }
 
-        if (filter.location) {
+        // Apply location filter
+        if (filter.location && filter.location !== 'all') {
             workspaces = workspaces.filter(w => w.location.type === filter.location);
         }
 
+        // Apply view filter
+        if (filter.view && filter.view !== 'all') {
+            const now = new Date();
+            const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            
+            switch (filter.view) {
+                case 'recent':
+                    workspaces = workspaces.filter(w => w.lastOpened >= oneWeekAgo);
+                    break;
+                case 'favorites':
+                    workspaces = workspaces.filter(w => w.isFavorite);
+                    break;
+                case 'pinned':
+                    workspaces = workspaces.filter(w => w.isPinned);
+                    break;
+            }
+        }
+
+        // Apply type filter
         if (filter.type && filter.type.length > 0) {
             workspaces = workspaces.filter(w => filter.type!.includes(w.type));
         }
 
+        // Apply favorites filter
         if (filter.showFavoritesOnly) {
             workspaces = workspaces.filter(w => w.isFavorite);
         }
 
+        // Apply pinned filter
         if (filter.showPinnedOnly) {
             workspaces = workspaces.filter(w => w.isPinned);
         }

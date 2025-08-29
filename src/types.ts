@@ -60,6 +60,7 @@ export interface WorkspaceFilter {
     searchText?: string;
     tags?: string[];
     location?: string;
+    view?: string;
     type?: ('workspace' | 'folder' | 'file')[];
     showFavoritesOnly?: boolean;
     showPinnedOnly?: boolean;

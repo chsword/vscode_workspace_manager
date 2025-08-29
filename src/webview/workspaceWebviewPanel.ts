@@ -147,11 +147,90 @@ export class WorkspaceWebviewPanel {
                 case 'ready':
                     this.update();
                     break;
+
+                case 'filterWorkspaces':
+                    // Re-send filtered workspaces based on filter criteria
+                    const filteredWorkspaces = await this.filterWorkspaces(data.filter);
+                    const tags = await this.workspaceManager.getTags();
+                    this.panel.webview.postMessage({
+                        type: 'updateWorkspaces',
+                        workspaces: filteredWorkspaces,
+                        tags
+                    });
+                    break;
             }
         } catch (error) {
             console.error('Error handling webview message:', error);
             vscode.window.showErrorMessage(`Error: ${error}`);
         }
+    }
+
+    private async filterWorkspaces(filter: any): Promise<any[]> {
+        const allWorkspaces = await this.workspaceManager.getWorkspaces();
+        
+        return allWorkspaces.filter(workspace => {
+            // Location filter
+            if (filter.location && filter.location !== 'all') {
+                if (workspace.location.type !== filter.location) {
+                    return false;
+                }
+            }
+
+            // View filter
+            if (filter.view) {
+                switch (filter.view) {
+                    case 'all':
+                        // Show all workspaces, no filtering by view
+                        break;
+                    case 'favorites':
+                        if (!workspace.isFavorite) {
+                            return false;
+                        }
+                        break;
+                    case 'pinned':
+                        if (!workspace.isPinned) {
+                            return false;
+                        }
+                        break;
+                    case 'recent':
+                        // Show workspaces opened in the last 7 days
+                        const lastOpened = new Date(workspace.lastOpened);
+                        const weekAgo = new Date();
+                        weekAgo.setDate(weekAgo.getDate() - 7);
+                        if (lastOpened <= weekAgo) {
+                            return false;
+                        }
+                        break;
+                }
+            }
+
+            // Tag filter
+            if (filter.tags && filter.tags.length > 0) {
+                const hasMatchingTag = filter.tags.some((tag: string) => 
+                    workspace.tags.some((workspaceTag: any) => workspaceTag.name === tag)
+                );
+                if (!hasMatchingTag) {
+                    return false;
+                }
+            }
+
+            // Search filter
+            if (filter.search) {
+                const searchTerm = filter.search.toLowerCase();
+                const matchesName = workspace.name.toLowerCase().includes(searchTerm);
+                const matchesPath = workspace.path.toLowerCase().includes(searchTerm);
+                const matchesDescription = workspace.description?.toLowerCase().includes(searchTerm);
+                const matchesTags = workspace.tags.some((tag: any) => 
+                    tag.name.toLowerCase().includes(searchTerm)
+                );
+                
+                if (!matchesName && !matchesPath && !matchesDescription && !matchesTags) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
     }
 
     private getHtmlForWebview(): string {
@@ -198,7 +277,12 @@ export class WorkspaceWebviewPanel {
         <div class="header">
             <h1>📁 Workspace Manager</h1>
             <div class="search-container">
-                <input type="text" id="searchInput" placeholder="🔍 Search workspaces..." />
+                <div class="search-input-wrapper">
+                    <input type="text" id="searchInput" placeholder="🔍 Search workspaces..." />
+                    <button id="clearSearchBtn" class="clear-search-btn" title="Clear search" style="display: none;">
+                        <span class="codicon codicon-close"></span>
+                    </button>
+                </div>
             </div>
             <div class="actions">
                 <button id="syncBtn" class="icon-button" title="Sync VS Code History">
@@ -225,7 +309,8 @@ export class WorkspaceWebviewPanel {
             </div>
             
             <div class="view-filters">
-                <button class="view-btn active" data-view="recent">📋 Recent</button>
+                <button class="view-btn active" data-view="all">📁 All</button>
+                <button class="view-btn" data-view="recent">📋 Recent</button>
                 <button class="view-btn" data-view="favorites">⭐ Favorites</button>
                 <button class="view-btn" data-view="pinned">📌 Pinned</button>
             </div>

@@ -83,10 +83,17 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
             const workspaces = await this.workspaceManager.getWorkspaces();
             const tags = await this.workspaceManager.getTags();
             
+            // Get auto sync configuration
+            const config = vscode.workspace.getConfiguration('workspaceManager');
+            const autoSync = config.get<boolean>('autoSync', true);
+            
             this._view.webview.postMessage({
                 type: 'updateWorkspaces',
                 workspaces,
-                tags
+                tags,
+                config: {
+                    autoSync
+                }
             });
         } catch (error) {
             console.error('Failed to update webview content:', error);
@@ -140,7 +147,9 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
                     break;
 
                 case 'toggleAutoSync':
-                    vscode.commands.executeCommand('workspaceManager.toggleAutoSync');
+                    await vscode.commands.executeCommand('workspaceManager.toggleAutoSync');
+                    // Refresh to update button state
+                    await this.updateContent();
                     break;
 
                 case 'configureSyncInterval':
@@ -173,10 +182,19 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
         }
 
         const workspaces = await this.workspaceManager.getWorkspaces(filter);
+        const tags = await this.workspaceManager.getTags();
+        
+        // Get auto sync configuration
+        const config = vscode.workspace.getConfiguration('workspaceManager');
+        const autoSync = config.get<boolean>('autoSync', true);
         
         this._view.webview.postMessage({
             type: 'updateWorkspaces',
-            workspaces
+            workspaces,
+            tags,
+            config: {
+                autoSync
+            }
         });
     }
 
@@ -200,7 +218,10 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
     <div id="app">
         <div class="header">
             <div class="search-container">
-                <input type="text" id="searchInput" placeholder="🔍 Search workspaces..." />
+                <div class="search-input-wrapper">
+                    <input type="text" id="searchInput" placeholder="🔍 Search workspaces..." />
+                    <button id="clearSearchBtn" class="clear-search-btn" style="display: none;" title="Clear search">✕</button>
+                </div>
             </div>
             <div class="actions">
                 <button id="syncBtn" class="icon-button" title="Sync VS Code History">
@@ -227,7 +248,8 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
             </div>
             
             <div class="view-filters">
-                <button class="view-btn active" data-view="recent">📋 Recent</button>
+                <button class="view-btn active" data-view="all">📁 All</button>
+                <button class="view-btn" data-view="recent">📋 Recent</button>
                 <button class="view-btn" data-view="favorites">⭐ Favorites</button>
                 <button class="view-btn" data-view="pinned">📌 Pinned</button>
             </div>

@@ -13,12 +13,13 @@
     let currentFilter = {
         searchText: '',
         location: 'all',
-        view: 'recent',
+        view: 'all',
         tags: []
     };
 
     // DOM Elements
     const searchInput = document.getElementById('searchInput');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
     const syncBtn = document.getElementById('syncBtn');
     const refreshBtn = document.getElementById('refreshBtn');
     const autoSyncBtn = document.getElementById('autoSyncBtn');
@@ -38,11 +39,32 @@
 
     // Setup event listeners
     function setupEventListeners() {
-        // Search input
-        searchInput.addEventListener('input', debounce((e) => {
-            currentFilter.searchText = e.target.value;
+        // Search input with real-time filtering
+        searchInput.addEventListener('input', (e) => {
+            const searchText = e.target.value;
+            currentFilter.searchText = searchText;
+            
+            console.log('Search input changed:', searchText); // Debug log
+            
+            // Show/hide clear button
+            if (clearSearchBtn) {
+                clearSearchBtn.style.display = searchText ? 'flex' : 'none';
+            }
+            
+            // Real-time filtering (no debounce for immediate response)
             filterWorkspaces();
-        }, 300));
+        });
+
+        // Clear search button
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                currentFilter.searchText = '';
+                clearSearchBtn.style.display = 'none';
+                filterWorkspaces();
+                searchInput.focus();
+            });
+        }
 
         // Refresh button
         refreshBtn.addEventListener('click', () => {
@@ -114,6 +136,10 @@
                         currentTags = message.tags;
                         renderTagFilters();
                     }
+                    // Update auto sync button state
+                    if (message.config) {
+                        updateAutoSyncButton(message.config.autoSync);
+                    }
                     renderWorkspaces();
                     updateStatistics();
                     break;
@@ -132,8 +158,27 @@
         activeBtn.classList.add('active');
     }
 
+    // Update auto sync button state
+    function updateAutoSyncButton(isEnabled) {
+        if (autoSyncBtn) {
+            const icon = autoSyncBtn.querySelector('.codicon');
+            if (icon) {
+                if (isEnabled) {
+                    icon.className = 'codicon codicon-sync';
+                    autoSyncBtn.classList.add('active');
+                    autoSyncBtn.title = 'Auto Sync Enabled - Click to disable';
+                } else {
+                    icon.className = 'codicon codicon-sync-ignored';
+                    autoSyncBtn.classList.remove('active');
+                    autoSyncBtn.title = 'Auto Sync Disabled - Click to enable';
+                }
+            }
+        }
+    }
+
     // Filter workspaces based on current filter
     function filterWorkspaces() {
+        console.log('Filtering workspaces with:', currentFilter); // Debug log
         vscode.postMessage({
             type: 'filterWorkspaces',
             filter: currentFilter
@@ -198,6 +243,7 @@
             chip.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const tagName = e.target.dataset.tag;
+                console.log('Tag clicked:', tagName); // Debug log
                 toggleTagFilter(tagName);
             });
         });
@@ -205,6 +251,10 @@
 
     // Toggle tag filter
     function toggleTagFilter(tagName) {
+        if (!currentFilter.tags) {
+            currentFilter.tags = [];
+        }
+        
         const index = currentFilter.tags.indexOf(tagName);
         if (index > -1) {
             currentFilter.tags.splice(index, 1);
@@ -212,7 +262,9 @@
             currentFilter.tags.push(tagName);
         }
         
+        console.log('Updated filter tags:', currentFilter.tags); // Debug log
         filterWorkspaces();
+        renderTagFilters(); // Re-render tag filters to update selected state
     }
 
     // Render workspaces
@@ -223,7 +275,7 @@
                     <div class="codicon codicon-folder"></div>
                     <div>No workspaces found</div>
                     <div style="font-size: 11px; margin-top: 8px; opacity: 0.7;">
-                        Open some folders or workspaces in VS Code to see them here
+                        ${currentFilter.searchText ? 'Try adjusting your search terms' : 'Open some folders or workspaces in VS Code to see them here'}
                     </div>
                 </div>
             `;
@@ -232,24 +284,46 @@
 
         // Group workspaces
         const pinnedWorkspaces = currentWorkspaces.filter(w => w.isPinned);
-        const recentWorkspaces = currentWorkspaces.filter(w => !w.isPinned);
+        const otherWorkspaces = currentWorkspaces.filter(w => !w.isPinned);
 
         let html = '';
 
-        // Render pinned workspaces
-        if (pinnedWorkspaces.length > 0) {
-            html += '<div style="font-size: 12px; font-weight: 500; margin-bottom: 8px; color: var(--vscode-sideBarTitle-foreground);">📌 Pinned</div>';
+        // Generate dynamic header based on current filter
+        let headerText = '';
+        if (currentFilter.view === 'favorites') {
+            headerText = '⭐ Favorites';
+        } else if (currentFilter.view === 'pinned') {
+            headerText = '📌 Pinned';
+        } else if (currentFilter.view === 'recent') {
+            headerText = '📋 Recent';
+        } else if (currentFilter.searchText) {
+            headerText = `🔍 Search results for "${currentFilter.searchText}"`;
+        } else if (currentFilter.location && currentFilter.location !== 'all') {
+            const locationNames = { local: '💻 Local', wsl: '🐧 WSL', remote: '🌐 Remote' };
+            headerText = locationNames[currentFilter.location] || '📁 Workspaces';
+        } else if (currentFilter.tags && currentFilter.tags.length > 0) {
+            headerText = `🏷️ Tagged: ${currentFilter.tags.join(', ')}`;
+        } else {
+            headerText = '📁 All Workspaces';
+        }
+
+        // Render pinned workspaces (if any and not in pinned-only view)
+        if (pinnedWorkspaces.length > 0 && currentFilter.view !== 'pinned') {
+            html += `<div style="font-size: 12px; font-weight: 500; margin-bottom: 8px; color: var(--vscode-sideBarTitle-foreground);">📌 Pinned</div>`;
             pinnedWorkspaces.forEach(workspace => {
                 html += renderWorkspaceItem(workspace);
             });
         }
 
-        // Render recent workspaces
-        if (recentWorkspaces.length > 0) {
-            html += '<div style="font-size: 12px; font-weight: 500; margin-bottom: 8px; margin-top: 16px; color: var(--vscode-sideBarTitle-foreground);">📋 Recent</div>';
-            recentWorkspaces.forEach(workspace => {
-                html += renderWorkspaceItem(workspace);
-            });
+        // Render other workspaces with dynamic header
+        if (otherWorkspaces.length > 0 || currentFilter.view === 'pinned') {
+            const workspacesToShow = currentFilter.view === 'pinned' ? pinnedWorkspaces : otherWorkspaces;
+            if (workspacesToShow.length > 0) {
+                html += `<div style="font-size: 12px; font-weight: 500; margin-bottom: 8px; ${pinnedWorkspaces.length > 0 && currentFilter.view !== 'pinned' ? 'margin-top: 16px;' : ''} color: var(--vscode-sideBarTitle-foreground);">${headerText}</div>`;
+                workspacesToShow.forEach(workspace => {
+                    html += renderWorkspaceItem(workspace);
+                });
+            }
         }
 
         workspaceList.innerHTML = html;
@@ -305,7 +379,7 @@
                  data-workspace-id="${workspace.id}">
                 <div class="workspace-header">
                     <div class="workspace-name">
-                        <span class="workspace-type">${typeIcon}</span>
+                        <span class="workspace-type workspace-type-${workspace.type}">${typeIcon}</span>
                         ${escapeHtml(workspace.name)}
                     </div>
                     <div class="workspace-actions">
@@ -334,11 +408,16 @@
                 <div class="workspace-path">${escapeHtml(workspace.path)}</div>
                 
                 <div class="workspace-meta">
-                    <span class="workspace-location">${locationIcon} ${workspace.location.displayName}</span>
+                    <div class="workspace-location-and-tags">
+                        <span class="workspace-location">${locationIcon} ${workspace.location.displayName}</span>
+                        ${workspace.tags.length > 0 ? workspace.tags.map(tagName => {
+                            const tag = currentTags.find(t => t.name === tagName);
+                            const color = tag ? tag.color : '#666';
+                            return `<span class="workspace-tag-inline" style="background-color: ${color}20; color: ${color}; border-color: ${color}40;">${tagName}</span>`;
+                        }).join('') : ''}
+                    </div>
                     <span class="workspace-time">${lastOpened}</span>
                 </div>
-                
-                ${workspace.tags.length > 0 ? `<div class="workspace-tags">${tagsHtml}</div>` : ''}
             </div>
         `;
     }

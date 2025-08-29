@@ -81,24 +81,24 @@ export class WorkspaceSyncService {
         try {
             console.log('开始同步 VS Code 工作区历史记录...');
             
-            // 只从SQLite数据库读取历史记录
-            const sqliteWorkspaces = await this.readVSCodeSQLiteHistory();
-            console.log(`从SQLite数据库读取到 ${sqliteWorkspaces.length} 个工作区`);
+            // 从SQLite数据库读取历史记录，包含顺序信息
+            const sqliteWorkspacesWithOrder = await this.readVSCodeSQLiteHistoryWithOrder();
+            console.log(`从SQLite数据库读取到 ${sqliteWorkspacesWithOrder.length} 个工作区`);
             
-            if (sqliteWorkspaces.length === 0) {
+            if (sqliteWorkspacesWithOrder.length === 0) {
                 throw new Error('无法从 VS Code 数据库读取历史记录。请确保 VS Code 已关闭，或数据库文件存在。');
             }
             
             // 转换为WorkspaceItem格式
             const newWorkspaces: WorkspaceItem[] = [];
-            for (const workspacePath of sqliteWorkspaces) {
+            for (const workspaceData of sqliteWorkspacesWithOrder) {
                 try {
-                    const workspaceItem = await this.createWorkspaceItem(workspacePath);
+                    const workspaceItem = await this.createWorkspaceItemWithOrder(workspaceData.path, workspaceData.order, sqliteWorkspacesWithOrder.length);
                     if (workspaceItem) {
                         newWorkspaces.push(workspaceItem);
                     }
                 } catch (error) {
-                    console.warn(`处理工作区失败: ${workspacePath}`, error);
+                    console.warn(`处理工作区失败: ${workspaceData.path}`, error);
                 }
             }
             
@@ -334,15 +334,27 @@ export class WorkspaceSyncService {
             
             for (const entry of parsedData.entries) {
                 try {
+                    console.log('处理历史记录条目:', {
+                        workspace: entry.workspace?.configPath,
+                        folder: entry.folderUri,
+                        file: entry.fileUri,
+                        label: entry.label,
+                        remoteAuthority: entry.remoteAuthority
+                    });
+                    
                     if (entry.workspace?.configPath) {
                         // Workspace file
+                        console.log('解码工作区文件URI:', entry.workspace.configPath);
                         const uri = this.decodeVSCodeUri(entry.workspace.configPath);
+                        console.log('解码结果:', uri);
                         if (uri) {
                             workspaces.push(uri);
                         }
                     } else if (entry.folderUri) {
                         // Folder
+                        console.log('解码文件夹URI:', entry.folderUri);
                         const uri = this.decodeVSCodeUri(entry.folderUri);
+                        console.log('解码结果:', uri);
                         if (uri && !entry.folderUri.includes('/.vscode/')) {
                             workspaces.push(uri);
                         }
@@ -371,26 +383,202 @@ export class WorkspaceSyncService {
     }
 
     /**
+     * Read VS Code SQLite history with order information for proper lastOpened calculation
+     */
+    private async readVSCodeSQLiteHistoryWithOrder(): Promise<Array<{path: string, order: number}>> {
+        const workspacesWithOrder: Array<{path: string, order: number}> = [];
+        
+        try {
+            const platform = os.platform();
+            const homeDir = os.homedir();
+            
+            let dbPath: string;
+            
+            switch (platform) {
+                case 'win32':
+                    dbPath = path.join(process.env.APPDATA || '', 'Code', 'User', 'globalStorage', 'state.vscdb');
+                    break;
+                case 'darwin':
+                    dbPath = path.join(homeDir, 'Library', 'Application Support', 'Code', 'User', 'globalStorage', 'state.vscdb');
+                    break;
+                case 'linux':
+                    dbPath = path.join(homeDir, '.config', 'Code', 'User', 'globalStorage', 'state.vscdb');
+                    break;
+                default:
+                    throw new Error(`不支持的操作系统平台: ${platform}`);
+            }
+
+            console.log(`正在查找 VS Code 数据库: ${dbPath}`);
+
+            if (!fs.existsSync(dbPath)) {
+                throw new Error(`VS Code 数据库文件不存在: ${dbPath}。请确保 VS Code 已正确安装并至少运行过一次。`);
+            }
+
+            console.log('正在读取 VS Code 历史记录...');
+
+            // 使用Node.js sqlite3包直接读取数据库
+            const sqlite3 = require('sqlite3');
+            
+            const historyData = await new Promise<string>((resolve, reject) => {
+                const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err: any) => {
+                    if (err) {
+                        reject(new Error(`无法打开数据库: ${err.message}`));
+                        return;
+                    }
+                });
+
+                const query = `SELECT value FROM ItemTable WHERE key = 'history.recentlyOpenedPathsList'`;
+                
+                db.get(query, (err: any, row: any) => {
+                    if (err) {
+                        db.close();
+                        reject(new Error(`SQLite 查询失败: ${err.message}`));
+                        return;
+                    }
+                    
+                    if (!row || !row.value) {
+                        db.close();
+                        reject(new Error('VS Code 数据库中没有找到历史记录数据。请确保已经在 VS Code 中打开过一些工作区。'));
+                        return;
+                    }
+                    
+                    db.close((closeErr: any) => {
+                        if (closeErr) {
+                            console.warn('关闭数据库时出现警告:', closeErr.message);
+                        }
+                    });
+                    
+                    resolve(row.value);
+                });
+            });
+            
+            console.log('解析历史记录数据...');
+            const parsedData = JSON.parse(historyData) as VSCodeHistory;
+            
+            if (!parsedData.entries || !Array.isArray(parsedData.entries)) {
+                throw new Error('历史记录数据格式不正确');
+            }
+            
+            let order = 0;
+            for (const entry of parsedData.entries) {
+                try {
+                    console.log('处理历史记录条目:', {
+                        workspace: entry.workspace?.configPath,
+                        folder: entry.folderUri,
+                        file: entry.fileUri,
+                        label: entry.label,
+                        remoteAuthority: entry.remoteAuthority
+                    });
+                    
+                    if (entry.workspace?.configPath) {
+                        // Workspace file
+                        console.log('解码工作区文件URI:', entry.workspace.configPath);
+                        const uri = this.decodeVSCodeUri(entry.workspace.configPath);
+                        console.log('解码结果:', uri);
+                        if (uri) {
+                            workspacesWithOrder.push({ path: uri, order: order++ });
+                        }
+                    } else if (entry.folderUri) {
+                        // Folder
+                        console.log('解码文件夹URI:', entry.folderUri);
+                        const uri = this.decodeVSCodeUri(entry.folderUri);
+                        console.log('解码结果:', uri);
+                        if (uri && !entry.folderUri.includes('/.vscode/')) {
+                            workspacesWithOrder.push({ path: uri, order: order++ });
+                        }
+                    }
+                    // Skip individual files (fileUri entries)
+                } catch (error) {
+                    console.warn('处理历史记录条目失败:', entry, error);
+                }
+            }
+            
+            console.log(`成功从 VS Code 历史记录中提取 ${workspacesWithOrder.length} 个工作区`);
+            
+            if (workspacesWithOrder.length === 0) {
+                throw new Error('未找到任何有效的工作区路径。请确保在 VS Code 中已经打开过文件夹或工作区。');
+            }
+            
+        } catch (error) {
+            if (error instanceof Error) {
+                console.error('读取 VS Code SQLite 历史记录失败:', error.message);
+                throw error;
+            }
+            throw new Error(`未知错误: ${String(error)}`);
+        }
+
+        return workspacesWithOrder;
+    }
+
+    /**
      * Decode VS Code URI format (like file:///c%3A/path) to normal path
      */
     private decodeVSCodeUri(uri: string): string | null {
         try {
+            console.log('解码URI:', uri);
+            
             if (uri.startsWith('file:///')) {
                 // Remove file:/// prefix and decode URI
                 const path = decodeURIComponent(uri.substring(8));
                 // Handle Windows paths (convert /c: to c:)
                 if (path.match(/^\/[a-zA-Z]:/)) {
-                    return path.substring(1);
+                    const result = path.substring(1);
+                    console.log('本地文件路径解码结果:', result);
+                    return result;
                 }
+                console.log('本地文件路径解码结果:', path);
                 return path;
             } else if (uri.startsWith('vscode-remote://')) {
                 // Remote workspace - extract the path part
+                console.log('处理远程URI:', uri);
                 const match = uri.match(/vscode-remote:\/\/([^/]+)(.+)/);
                 if (match) {
                     const [, authority, remotePath] = match;
-                    return `${authority}:${remotePath}`;
+                    console.log('远程URI解析 - authority:', authority, 'remotePath:', remotePath);
+                    
+                    // Handle SSH remote
+                    if (authority.startsWith('ssh-remote')) {
+                        const result = `ssh://${authority.replace('ssh-remote+', '')}${remotePath}`;
+                        console.log('SSH远程解码结果:', result);
+                        return result;
+                    }
+                    
+                    // Handle WSL remote
+                    if (authority.startsWith('wsl')) {
+                        const distro = authority.replace('wsl+', '');
+                        const result = `\\\\wsl$\\${distro}${remotePath.replace(/\//g, '\\')}`;
+                        console.log('WSL远程解码结果:', result);
+                        return result;
+                    }
+                    
+                    // Handle Codespaces
+                    if (authority.includes('codespaces')) {
+                        const result = `codespaces://${authority}${remotePath}`;
+                        console.log('Codespaces解码结果:', result);
+                        return result;
+                    }
+                    
+                    // Handle other remote types
+                    const result = `${authority}:${remotePath}`;
+                    console.log('其他远程类型解码结果:', result);
+                    return result;
                 }
+            } else if (uri.startsWith('vscode-vfs://github')) {
+                // GitHub Codespaces or GitHub remote
+                const result = uri.replace('vscode-vfs://', 'github://');
+                console.log('GitHub VFS解码结果:', result);
+                return result;
+            } else if (uri.includes('wsl$')) {
+                // Direct WSL path
+                console.log('直接WSL路径:', uri);
+                return uri;
+            } else if (uri.startsWith('ssh://')) {
+                // Direct SSH URI
+                console.log('直接SSH路径:', uri);
+                return uri;
             }
+            
+            console.log('无法识别的URI格式:', uri);
             return null;
         } catch (error) {
             console.warn('Failed to decode VS Code URI:', uri, error);
@@ -725,13 +913,37 @@ export class WorkspaceSyncService {
      */
     private async createWorkspaceItem(workspacePath: string): Promise<WorkspaceItem | null> {
         try {
-            if (!fs.existsSync(workspacePath)) {
-                return null;
-            }
-
-            const stats = fs.statSync(workspacePath);
+            console.log('创建工作区项目:', workspacePath);
+            
             const location = this.detectLocation(workspacePath);
-            const projectInfo = await this.detectProjectInfo(workspacePath);
+            console.log('检测到的位置类型:', location.type);
+            
+            let stats: fs.Stats;
+            let projectInfo: ProjectInfo | undefined;
+            
+            // For remote and WSL workspaces, we can't check file existence locally
+            if (location.type === 'remote' || location.type === 'wsl') {
+                console.log('远程/WSL工作区，跳过本地文件检查');
+                // Create dummy stats for remote workspaces
+                stats = {
+                    mtime: new Date(),
+                    isDirectory: () => true,
+                    isFile: () => false
+                } as fs.Stats;
+                
+                // We can't detect project info for remote workspaces
+                projectInfo = undefined;
+            } else {
+                // Local workspace - check if exists
+                if (!fs.existsSync(workspacePath)) {
+                    console.log('本地工作区路径不存在:', workspacePath);
+                    return null;
+                }
+                
+                stats = fs.statSync(workspacePath);
+                projectInfo = await this.detectProjectInfo(workspacePath);
+            }
+            
             const autoTags = this.detectAutoTags(workspacePath, projectInfo);
 
             // Generate a unique ID based on path
@@ -739,7 +951,7 @@ export class WorkspaceSyncService {
             
             const workspaceItem: WorkspaceItem = {
                 id,
-                name: path.basename(workspacePath),
+                name: this.extractWorkspaceName(workspacePath),
                 path: workspacePath,
                 type: this.detectType(workspacePath, stats),
                 location,
@@ -750,6 +962,7 @@ export class WorkspaceSyncService {
                 projectInfo
             };
 
+            console.log('成功创建工作区项目:', workspaceItem.name, workspaceItem.location.type);
             return workspaceItem;
         } catch (error) {
             console.error(`Failed to create workspace item for ${workspacePath}:`, error);
@@ -758,10 +971,137 @@ export class WorkspaceSyncService {
     }
 
     /**
+     * Create workspace item with proper lastOpened time based on order in VS Code history
+     */
+    private async createWorkspaceItemWithOrder(workspacePath: string, order: number, totalItems: number): Promise<WorkspaceItem | null> {
+        try {
+            console.log('创建工作区项目 (带顺序):', workspacePath, '顺序:', order);
+            
+            const location = this.detectLocation(workspacePath);
+            console.log('检测到的位置类型:', location.type);
+            
+            let stats: fs.Stats;
+            let projectInfo: ProjectInfo | undefined;
+            
+            // Calculate lastOpened based on order in history
+            // Most recent (order 0) gets current time, others get progressively older
+            const now = new Date();
+            const minutesAgo = order * 5; // Each item is 5 minutes older than the previous
+            const lastOpened = new Date(now.getTime() - minutesAgo * 60 * 1000);
+            
+            // For remote and WSL workspaces, we can't check file existence locally
+            if (location.type === 'remote' || location.type === 'wsl') {
+                console.log('远程/WSL工作区，跳过本地文件检查');
+                // Create dummy stats with calculated lastOpened time
+                stats = {
+                    mtime: lastOpened,
+                    isDirectory: () => true,
+                    isFile: () => false
+                } as fs.Stats;
+                
+                // We can't detect project info for remote workspaces
+                projectInfo = undefined;
+            } else {
+                // Local workspace - check if exists
+                if (!fs.existsSync(workspacePath)) {
+                    console.log('本地工作区路径不存在:', workspacePath);
+                    return null;
+                }
+                
+                const fileStats = fs.statSync(workspacePath);
+                // Use calculated time instead of file mtime for consistency
+                stats = {
+                    ...fileStats,
+                    mtime: lastOpened
+                } as fs.Stats;
+                projectInfo = await this.detectProjectInfo(workspacePath);
+            }
+            
+            const autoTags = this.detectAutoTags(workspacePath, projectInfo);
+
+            // Generate a unique ID based on path
+            const id = Buffer.from(workspacePath).toString('base64');
+            
+            const workspaceItem: WorkspaceItem = {
+                id,
+                name: this.extractWorkspaceName(workspacePath),
+                path: workspacePath,
+                type: this.detectType(workspacePath, stats),
+                location,
+                lastOpened: stats.mtime,
+                isFavorite: false,
+                isPinned: false,
+                tags: autoTags,
+                projectInfo
+            };
+
+            console.log('成功创建工作区项目 (带顺序):', workspaceItem.name, workspaceItem.location.type, '最后打开:', workspaceItem.lastOpened);
+            return workspaceItem;
+        } catch (error) {
+            console.error(`Failed to create workspace item for ${workspacePath}:`, error);
+            return null;
+        }
+    }
+
+    /**
+     * Extract workspace name from path, handling different URI formats
+     */
+    private extractWorkspaceName(workspacePath: string): string {
+        try {
+            // Handle SSH remote paths
+            if (workspacePath.startsWith('ssh://')) {
+                const parts = workspacePath.split('/');
+                return parts[parts.length - 1] || 'Remote Workspace';
+            }
+            
+            // Handle GitHub paths
+            if (workspacePath.startsWith('github://')) {
+                const parts = workspacePath.split('/');
+                return parts[parts.length - 1] || 'GitHub Workspace';
+            }
+            
+            // Handle Codespaces
+            if (workspacePath.includes('codespaces')) {
+                const parts = workspacePath.split('/');
+                return parts[parts.length - 1] || 'Codespaces Workspace';
+            }
+            
+            // Handle WSL paths
+            if (workspacePath.startsWith('\\\\wsl$\\')) {
+                const parts = workspacePath.split('\\');
+                return parts[parts.length - 1] || 'WSL Workspace';
+            }
+            
+            // Handle remote authority paths
+            if (workspacePath.includes(':')) {
+                const parts = workspacePath.split('/');
+                const name = parts[parts.length - 1];
+                if (name && name !== '') {
+                    return name;
+                }
+                // Fallback to authority part
+                const authorityMatch = workspacePath.match(/([^:]+):/);
+                return authorityMatch ? `Remote (${authorityMatch[1]})` : 'Remote Workspace';
+            }
+            
+            // Default: use path.basename for local paths
+            return path.basename(workspacePath) || 'Unknown Workspace';
+        } catch (error) {
+            console.warn('Failed to extract workspace name from path:', workspacePath, error);
+            return 'Unknown Workspace';
+        }
+    }
+
+    /**
      * Detect workspace location type
      */
     private detectLocation(workspacePath: string): WorkspaceLocation {
-        if (workspacePath.startsWith('\\\\wsl$\\') || workspacePath.startsWith('/mnt/wsl/')) {
+        // WSL patterns
+        if (workspacePath.startsWith('\\\\wsl$\\') || 
+            workspacePath.startsWith('/mnt/wsl/') ||
+            workspacePath.includes('wsl+') ||
+            workspacePath.includes('/mnt/c/') ||
+            workspacePath.includes('/mnt/d/')) {
             return {
                 type: 'wsl',
                 displayName: 'WSL',
@@ -771,7 +1111,14 @@ export class WorkspaceSyncService {
             };
         }
         
-        if (workspacePath.startsWith('ssh://') || workspacePath.includes('@')) {
+        // Remote patterns
+        if (workspacePath.startsWith('ssh://') || 
+            workspacePath.includes('@') ||
+            workspacePath.startsWith('github://') ||
+            workspacePath.includes('ssh-remote') ||
+            workspacePath.includes('vscode-remote') ||
+            workspacePath.includes('codespaces') ||
+            workspacePath.includes('dev-container')) {
             return {
                 type: 'remote',
                 displayName: 'Remote',
@@ -785,7 +1132,7 @@ export class WorkspaceSyncService {
             type: 'local',
             displayName: 'Local',
             details: {
-                driveLetter: workspacePath.charAt(0).toUpperCase()
+                driveLetter: workspacePath.length > 0 ? workspacePath.charAt(0).toUpperCase() : 'C'
             }
         };
     }
@@ -794,8 +1141,24 @@ export class WorkspaceSyncService {
      * Extract WSL distribution name from path
      */
     private extractWSLDistribution(workspacePath: string): string {
-        const match = workspacePath.match(/\\\\wsl\$\\([^\\]+)/);
-        return match ? match[1] : 'Unknown';
+        // \\wsl$\Ubuntu-20.04\home\user\project
+        let match = workspacePath.match(/\\\\wsl\$\\([^\\]+)/);
+        if (match) {
+            return match[1];
+        }
+        
+        // wsl+Ubuntu-20.04
+        match = workspacePath.match(/wsl\+([^:/]+)/);
+        if (match) {
+            return match[1];
+        }
+        
+        // /mnt/c/ or /mnt/d/ paths
+        if (workspacePath.includes('/mnt/')) {
+            return 'WSL';
+        }
+        
+        return 'Unknown';
     }
 
     /**
@@ -926,31 +1289,45 @@ export class WorkspaceSyncService {
      * Merge existing workspaces with newly discovered ones
      */
     private mergeWorkspaces(existing: WorkspaceItem[], discovered: WorkspaceItem[]): WorkspaceItem[] {
-        const existingMap = new Map(existing.map(w => [w.path, w]));
+        // Normalize paths for comparison (handle case sensitivity and path separators)
+        const normalizePath = (p: string) => path.resolve(p).toLowerCase();
+        
+        const existingMap = new Map(existing.map(w => [normalizePath(w.path), w]));
         const result: WorkspaceItem[] = [];
 
         // Add all discovered workspaces, preserving user data from existing ones
         for (const discoveredWorkspace of discovered) {
-            const existingWorkspace = existingMap.get(discoveredWorkspace.path);
+            const normalizedPath = normalizePath(discoveredWorkspace.path);
+            const existingWorkspace = existingMap.get(normalizedPath);
             
             if (existingWorkspace) {
-                // Merge with existing data, keeping user modifications
+                // Merge with existing data, keeping user modifications but updating lastOpened
                 result.push({
-                    ...discoveredWorkspace,
+                    ...discoveredWorkspace, // This includes the updated lastOpened time
                     isFavorite: existingWorkspace.isFavorite,
                     isPinned: existingWorkspace.isPinned,
                     description: existingWorkspace.description,
                     tags: [...new Set([...discoveredWorkspace.tags, ...existingWorkspace.tags])]
                 });
-                existingMap.delete(discoveredWorkspace.path);
+                console.log(`更新工作区最后使用时间: ${discoveredWorkspace.name} -> ${discoveredWorkspace.lastOpened}`);
+                existingMap.delete(normalizedPath);
             } else {
-                result.push(discoveredWorkspace);
+                // Check if this workspace already exists in result (additional deduplication)
+                const isDuplicate = result.some(w => normalizePath(w.path) === normalizedPath);
+                if (!isDuplicate) {
+                    result.push(discoveredWorkspace);
+                }
             }
         }
 
         // Add remaining existing workspaces that weren't discovered
         for (const [, existingWorkspace] of existingMap) {
-            result.push(existingWorkspace);
+            // Check if this workspace already exists in result
+            const normalizedPath = normalizePath(existingWorkspace.path);
+            const isDuplicate = result.some(w => normalizePath(w.path) === normalizedPath);
+            if (!isDuplicate) {
+                result.push(existingWorkspace);
+            }
         }
 
         // Sort by last opened date (most recent first)
