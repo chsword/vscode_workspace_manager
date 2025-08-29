@@ -93,45 +93,17 @@
         "icon": "$(folder-library)"
       }
     ],
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "workspaceManagerContainer",
-          "title": "Workspace Manager",
-          "icon": "$(folder-library)"
-        }
-      ]
-    },
-    "views": {
-      "workspaceManagerContainer": [
-        {
-          "id": "workspaceManagerView",
-          "name": "Workspaces",
-          "type": "webview"
-        }
-      ]
-    },
+    "viewsContainers": {},
+    "views": {},
     "menus": {
-      "view/title": [
-        {
-          "command": "workspaceManager.syncWorkspaces",
-          "when": "view == workspaceManagerView",
-          "group": "navigation@1"
-        },
+      "commandPalette": [
         {
           "command": "workspaceManager.openInEditor",
-          "when": "view == workspaceManagerView",
-          "group": "navigation@2"
+          "title": "Workspace Manager: Open"
         },
         {
-          "command": "workspaceManager.refreshWorkspaces",
-          "when": "view == workspaceManagerView",
-          "group": "navigation@3"
-        },
-        {
-          "command": "workspaceManager.openSettings",
-          "when": "view == workspaceManagerView",
-          "group": "navigation@4"
+          "command": "workspaceManager.syncWorkspaces",
+          "title": "Workspace Manager: Sync"
         }
       ]
     },
@@ -223,6 +195,7 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@vscode/codicons": "^0.0.39",
     "chokidar": "^3.5.3",
     "sqlite3": "^5.1.7",
     "uuid": "^9.0.1"

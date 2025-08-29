@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { WorkspaceManager } from './workspaceManager';
-import { WorkspaceWebviewProvider } from './webview/workspaceWebviewProvider';
 import { WorkspaceWebviewPanel } from './webview/workspaceWebviewPanel';
 import { WorkspaceSyncService } from './services/workspaceSyncService';
 import { WorkspaceStorage } from './storage/workspaceStorage';
@@ -21,23 +20,48 @@ export function activate(context: vscode.ExtensionContext): void {
     // Initialize workspace manager
     const workspaceManager = new WorkspaceManager(storage, syncService);
     
-    // Initialize webview provider
-    const webviewProvider = new WorkspaceWebviewProvider(context.extensionUri, workspaceManager);
+    // Create status bar items
+    createStatusBarItems(context, workspaceManager, syncService);
     
-    // Register webview provider
-    context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider('workspaceManagerView', webviewProvider)
-    );
-
     // Register commands
-    registerCommands(context, workspaceManager, webviewProvider);
+    registerCommands(context, workspaceManager);
     
     // Start sync service if auto-sync is enabled
     if (vscode.workspace.getConfiguration('workspaceManager').get('autoSync', true)) {
         syncService.startAutoSync();
     }
     
+    // Auto-open workspace manager in editor on startup
+    setTimeout(() => {
+        WorkspaceWebviewPanel.createOrShow(context.extensionUri, workspaceManager);
+    }, 1000); // Delay to ensure VS Code is fully loaded
+    
     console.log('Workspace Manager extension activated successfully!');
+}
+
+/**
+ * Create status bar items for quick access
+ */
+function createStatusBarItems(
+    context: vscode.ExtensionContext,
+    workspaceManager: WorkspaceManager,
+    syncService: WorkspaceSyncService
+): void {
+    // Workspace Manager status bar item
+    const workspaceManagerItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    workspaceManagerItem.text = "$(folder-library) Workspaces";
+    workspaceManagerItem.tooltip = "Open Workspace Manager";
+    workspaceManagerItem.command = 'workspaceManager.openInEditor';
+    workspaceManagerItem.show();
+    context.subscriptions.push(workspaceManagerItem);
+
+    // Sync status bar item
+    const syncItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99);
+    syncItem.text = "$(sync) Sync";
+    syncItem.tooltip = "Sync VS Code History";
+    syncItem.command = 'workspaceManager.syncWorkspaces';
+    syncItem.show();
+    context.subscriptions.push(syncItem);
 }
 
 /**
@@ -45,20 +69,21 @@ export function activate(context: vscode.ExtensionContext): void {
  */
 function registerCommands(
     context: vscode.ExtensionContext, 
-    workspaceManager: WorkspaceManager,
-    webviewProvider: WorkspaceWebviewProvider
+    workspaceManager: WorkspaceManager
 ): void {
     // Get sync service from workspace manager
     const syncService = (workspaceManager as any).syncService as WorkspaceSyncService;
     
     const commands = [
         vscode.commands.registerCommand('workspaceManager.showWorkspaces', () => {
-            webviewProvider.refresh();
+            // Open in editor instead of sidebar view
+            WorkspaceWebviewPanel.createOrShow(context.extensionUri, workspaceManager);
         }),
         
         vscode.commands.registerCommand('workspaceManager.refreshWorkspaces', async () => {
             await workspaceManager.refreshWorkspaces();
-            webviewProvider.refresh();
+            // Refresh any open webview panels
+            WorkspaceWebviewPanel.refresh();
         }),
 
         // 新增：手动同步命令
@@ -67,7 +92,7 @@ function registerCommands(
                 vscode.window.showInformationMessage('正在同步 VS Code 工作区历史记录...');
                 const synced = await syncService.syncWorkspaces();
                 vscode.window.showInformationMessage(`同步完成！发现 ${synced.length} 个工作区`);
-                webviewProvider.refresh();
+                WorkspaceWebviewPanel.refresh();
             } catch (error) {
                 vscode.window.showErrorMessage(`同步失败: ${error}`);
             }
@@ -127,27 +152,27 @@ function registerCommands(
         
         vscode.commands.registerCommand('workspaceManager.addToFavorites', async (workspaceId: string) => {
             await workspaceManager.addToFavorites(workspaceId);
-            webviewProvider.refresh();
+            WorkspaceWebviewPanel.refresh();
         }),
         
         vscode.commands.registerCommand('workspaceManager.removeFromFavorites', async (workspaceId: string) => {
             await workspaceManager.removeFromFavorites(workspaceId);
-            webviewProvider.refresh();
+            WorkspaceWebviewPanel.refresh();
         }),
         
         vscode.commands.registerCommand('workspaceManager.editTags', async (workspaceId: string) => {
             await workspaceManager.editTags(workspaceId);
-            webviewProvider.refresh();
+            WorkspaceWebviewPanel.refresh();
         }),
         
         vscode.commands.registerCommand('workspaceManager.editDescription', async (workspaceId: string) => {
             await workspaceManager.editDescription(workspaceId);
-            webviewProvider.refresh();
+            WorkspaceWebviewPanel.refresh();
         }),
         
         vscode.commands.registerCommand('workspaceManager.removeWorkspace', async (workspaceId: string) => {
             await workspaceManager.removeWorkspace(workspaceId);
-            webviewProvider.refresh();
+            WorkspaceWebviewPanel.refresh();
         }),
 
         // 新增：在编辑器中打开工作区管理器

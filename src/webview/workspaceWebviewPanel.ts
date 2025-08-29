@@ -27,7 +27,8 @@ export class WorkspaceWebviewPanel {
                 enableScripts: true,
                 retainContextWhenHidden: true,
                 localResourceRoots: [
-                    vscode.Uri.joinPath(extensionUri, 'media')
+                    vscode.Uri.joinPath(extensionUri, 'media'),
+                    vscode.Uri.joinPath(extensionUri, 'node_modules', '@vscode', 'codicons', 'dist')
                 ]
             }
         );
@@ -37,6 +38,12 @@ export class WorkspaceWebviewPanel {
 
     public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, workspaceManager: WorkspaceManager): void {
         WorkspaceWebviewPanel.currentPanel = new WorkspaceWebviewPanel(panel, extensionUri, workspaceManager);
+    }
+
+    public static refresh(): void {
+        if (WorkspaceWebviewPanel.currentPanel) {
+            WorkspaceWebviewPanel.currentPanel.refresh();
+        }
     }
 
     private constructor(
@@ -160,7 +167,7 @@ export class WorkspaceWebviewPanel {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${this.panel.webview.cspSource} 'unsafe-inline'; script-src ${this.panel.webview.cspSource};">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${this.panel.webview.cspSource} 'unsafe-inline'; script-src ${this.panel.webview.cspSource}; font-src ${this.panel.webview.cspSource};">
     <link href="${styleUri}" rel="stylesheet">
     <title>Workspace Manager</title>
     <style>

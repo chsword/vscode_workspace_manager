@@ -3,7 +3,23 @@ import { WorkspaceManager } from '../workspaceManager';
 import { WorkspaceItem, WorkspaceFilter } from '../types';
 
 /**
- * Webview provider for the workspace manager view
+ * Webview    private getHtmlForWebview(webview: vscode.Webview): string {
+        // Get URIs for resources
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'main.js'));
+        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'main.css'));
+        
+        // Get codicon font URI from VS Code
+        const codiconsUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css'));
+
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="${codiconsUri}" rel="stylesheet">
+    <link href="${styleUri}" rel="stylesheet">
+    <title>Workspace Manager</title>
+</head>`; the workspace manager view
  */
 export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'workspaceManagerView';

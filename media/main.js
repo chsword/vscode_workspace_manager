@@ -317,6 +317,9 @@
                                 title="${workspace.isPinned ? 'Unpin' : 'Pin to top'}">
                             <span class="codicon codicon-pin${workspace.isPinned ? '' : ''}"></span>
                         </button>
+                        <button class="action-btn" data-action="editTags" title="Edit tags">
+                            <span class="codicon codicon-tag"></span>
+                        </button>
                         <button class="action-btn" data-action="editDescription" title="Edit description">
                             <span class="codicon codicon-edit"></span>
                         </button>
