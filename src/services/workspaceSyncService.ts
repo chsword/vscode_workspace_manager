@@ -546,7 +546,9 @@ export class WorkspaceSyncService {
                     // Handle WSL remote
                     if (authority.startsWith('wsl')) {
                         const distro = authority.replace('wsl+', '');
-                        const result = `\\\\wsl$\\${distro}${remotePath.replace(/\//g, '\\')}`;
+                        // Decode any URL-encoded characters in the remote path
+                        const decodedPath = decodeURIComponent(remotePath);
+                        const result = `\\\\wsl$\\${distro}${decodedPath.replace(/\//g, '\\')}`;
                         console.log('WSL远程解码结果:', result);
                         return result;
                     }
@@ -1145,15 +1147,26 @@ export class WorkspaceSyncService {
         // \\wsl$\Ubuntu-20.04\home\user\project
         let match = workspacePath.match(/\\\\wsl\$\\([^\\]+)/);
         if (match) {
-            return match[1];
+            let distro = match[1];
+            // Handle URL-encoded distribution names (e.g., wsl%2Bubuntu -> wsl+ubuntu)
+            try {
+                distro = decodeURIComponent(distro);
+            } catch (decodeError) {
+                // If decode fails, use original
+            }
+            // If the distribution name starts with 'wsl+', extract the actual name
+            if (distro.startsWith('wsl+')) {
+                distro = distro.substring(4); // Remove 'wsl+' prefix
+            }
+            return distro;
         }
-        
+
         // wsl+Ubuntu-20.04
         match = workspacePath.match(/wsl\+([^:/]+)/);
         if (match) {
             return match[1];
         }
-        
+
         // /mnt/c/ or /mnt/d/ paths
         if (workspacePath.includes('/mnt/')) {
             return 'WSL';

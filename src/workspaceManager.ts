@@ -16,6 +16,117 @@ export class WorkspaceManager {
     ) {}
 
     /**
+     * Log workspace operation with timestamp
+     */
+    private logOperation(operation: string, details: any): void {
+        const timestamp = new Date().toISOString();
+        console.log(`[${timestamp}] WorkspaceManager.${operation}:`, details);
+    }
+
+    /**
+     * Log workspace operation error
+     */
+    private logError(operation: string, error: any, context?: any): void {
+        const timestamp = new Date().toISOString();
+        console.error(`[${timestamp}] WorkspaceManager.${operation} ERROR:`, {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+            context
+        });
+    }
+
+    /**
+     * Get correct WSL distribution name with proper case
+     */
+    private async getCorrectWSLDistribution(detectedDistro: string): Promise<string> {
+        try {
+            // If it's already 'default', try to detect the actual distribution
+            if (detectedDistro === 'default' || detectedDistro === 'Unknown') {
+                this.logOperation('getCorrectWSLDistribution.detecting', { reason: 'default_or_unknown' });
+
+                // Try to get the default WSL distribution
+                const { exec } = require('child_process');
+                const { promisify } = require('util');
+                const execAsync = promisify(exec);
+
+                try {
+                    const { stdout } = await execAsync('wsl -l -q', { encoding: 'buffer' });
+
+                    // Convert UTF-16 buffer to string (WSL outputs UTF-16)
+                    const utf16String = stdout.toString('utf16le');
+                    const lines = utf16String.trim().split('\n').filter((line: string) => line.trim());
+                    if (lines.length > 0) {
+                        // Get the first (default) distribution
+                        const defaultDistro = lines[0].trim();
+                        this.logOperation('getCorrectWSLDistribution.foundDefault', { defaultDistro });
+                        return defaultDistro;
+                    }
+                } catch (execError) {
+                    this.logError('getCorrectWSLDistribution.exec', execError, { command: 'wsl -l -q' });
+                }
+            }
+
+            // Validate the detected distribution against available ones
+            const { exec } = require('child_process');
+            const { promisify } = require('util');
+            const execAsync = promisify(exec);
+
+            try {
+                const { stdout } = await execAsync('wsl -l -q', { encoding: 'buffer' });
+
+                // Convert UTF-16 buffer to string (WSL outputs UTF-16)
+                const utf16String = stdout.toString('utf16le');
+                const availableDistros = utf16String.trim().split('\n')
+                    .map((line: string) => line.trim())
+                    .filter((line: string) => line.length > 0);
+
+                this.logOperation('getCorrectWSLDistribution.available', { availableDistros });
+
+                // Find exact match first
+                const exactMatch = availableDistros.find((distro: string) => distro === detectedDistro);
+                if (exactMatch) {
+                    this.logOperation('getCorrectWSLDistribution.exactMatch', { detectedDistro, exactMatch });
+                    return exactMatch;
+                }
+
+                // Try case-insensitive match
+                const caseInsensitiveMatch = availableDistros.find((distro: string) =>
+                    distro.toLowerCase() === detectedDistro.toLowerCase()
+                );
+                if (caseInsensitiveMatch) {
+                    this.logOperation('getCorrectWSLDistribution.caseInsensitiveMatch', {
+                        detectedDistro,
+                        caseInsensitiveMatch
+                    });
+                    return caseInsensitiveMatch;
+                }
+
+                // If no match found, return the first available distribution
+                if (availableDistros.length > 0) {
+                    const fallbackDistro = availableDistros[0];
+                    this.logOperation('getCorrectWSLDistribution.fallback', {
+                        detectedDistro,
+                        fallbackDistro,
+                        reason: 'no_match_found'
+                    });
+                    return fallbackDistro;
+                }
+
+            } catch (execError) {
+                this.logError('getCorrectWSLDistribution.validate', execError, { detectedDistro });
+            }
+
+            // If all else fails, return the detected distribution as-is
+            this.logOperation('getCorrectWSLDistribution.returnAsIs', { detectedDistro });
+            return detectedDistro;
+
+        } catch (error) {
+            this.logError('getCorrectWSLDistribution', error, { detectedDistro });
+            return detectedDistro; // Return original if error occurs
+        }
+    }
+
+    /**
      * Get filtered workspaces
      */
     async getWorkspaces(filter?: WorkspaceFilter): Promise<WorkspaceItem[]> {
@@ -100,69 +211,205 @@ export class WorkspaceManager {
      * Open a workspace
      */
     async openWorkspace(id: string, newWindow = false): Promise<void> {
+        this.logOperation('openWorkspace', { id, newWindow });
+
         const workspace = await this.getWorkspace(id);
         if (!workspace) {
+            this.logError('openWorkspace', new Error(`Workspace not found: ${id}`), { id });
             vscode.window.showErrorMessage(`Workspace not found: ${id}`);
             return;
         }
 
+        this.logOperation('openWorkspace.found', {
+            workspaceId: workspace.id,
+            workspaceName: workspace.name,
+            workspacePath: workspace.path,
+            workspaceType: workspace.type,
+            locationType: workspace.location.type,
+            locationDetails: workspace.location.details
+        });
+
         try {
-            let uri: vscode.Uri;
+            let uri: vscode.Uri | undefined;
+            let commandExecuted = false;
 
             if (workspace.location.type === 'wsl') {
+                this.logOperation('openWorkspace.wsl.start', {
+                    originalPath: workspace.path,
+                    workspaceType: workspace.type
+                });
+
                 // For WSL workspaces, construct the proper vscode-remote URI
                 let wslPath = workspace.path;
 
                 // Extract WSL distribution name
-                const distro = workspace.location.details?.wslDistribution || 'default';
+                let distro = workspace.location.details?.wslDistribution || 'default';
+
+                this.logOperation('openWorkspace.wsl.distro', {
+                    detectedDistro: distro,
+                    locationDetails: workspace.location.details
+                });
+
+                // Validate and correct the WSL distribution name
+                if (distro !== 'default' && distro !== 'Unknown') {
+                    try {
+                        distro = await this.getCorrectWSLDistribution(distro);
+                        this.logOperation('openWorkspace.wsl.distro.validated', {
+                            originalDistro: workspace.location.details?.wslDistribution,
+                            correctedDistro: distro
+                        });
+                    } catch (validationError) {
+                        this.logError('openWorkspace.wsl.distro.validation', validationError, {
+                            originalDistro: distro
+                        });
+                        // Continue with original distro if validation fails
+                    }
+                }
+
+                // Decode URL-encoded characters in the path
+                try {
+                    wslPath = decodeURIComponent(wslPath);
+                    this.logOperation('openWorkspace.wsl.decode', { decodedPath: wslPath });
+                } catch (decodeError) {
+                    this.logError('openWorkspace.wsl.decode', decodeError, { originalPath: workspace.path });
+                    // Continue with original path if decode fails
+                }
 
                 // Convert Windows WSL path to Unix path for vscode-remote
+                const originalPath = wslPath;
                 if (wslPath.startsWith('\\\\wsl$\\')) {
                     // \\wsl$\Ubuntu\home\user\project -> /home/user/project
                     const parts = wslPath.split('\\');
                     if (parts.length >= 4) {
-                        wslPath = '/' + parts.slice(3).join('/');
+                        wslPath = '/' + parts.slice(4).join('/');
                     }
+                    this.logOperation('openWorkspace.wsl.convert.windows', {
+                        original: originalPath,
+                        converted: wslPath,
+                        partsSkipped: parts.slice(0, 4),
+                        partsUsed: parts.slice(4)
+                    });
                 } else if (wslPath.startsWith('/mnt/wsl/')) {
                     // /mnt/wsl/Ubuntu/home/user/project -> /home/user/project
                     wslPath = wslPath.replace('/mnt/wsl/' + distro, '');
+                    this.logOperation('openWorkspace.wsl.convert.mnt', {
+                        original: originalPath,
+                        converted: wslPath,
+                        distro
+                    });
                 } else if (wslPath.includes('\\')) {
                     // Convert backslashes to forward slashes
                     wslPath = wslPath.replace(/\\/g, '/');
+                    this.logOperation('openWorkspace.wsl.convert.backslash', {
+                        original: originalPath,
+                        converted: wslPath
+                    });
                 }
 
                 // Ensure path starts with /
                 if (!wslPath.startsWith('/')) {
                     wslPath = '/' + wslPath;
+                    this.logOperation('openWorkspace.wsl.ensureSlash', { finalPath: wslPath });
                 }
 
-                const wslUri = `vscode-remote://wsl+${distro}${wslPath}`;
-                uri = vscode.Uri.parse(wslUri);
-                console.log('Opening WSL workspace:', wslUri, 'from path:', workspace.path);
+                // Handle workspace files vs folders differently
+                if (workspace.type === 'workspace') {
+                    // For .code-workspace files in WSL, we need to use the file URI
+                    // But the file is accessed through WSL, so we need to construct the proper path
+                    const fileUri = vscode.Uri.file(wslPath);
+                    this.logOperation('openWorkspace.wsl.workspaceFile', {
+                        fileUri: fileUri.toString(),
+                        wslPath
+                    });
+
+                    try {
+                        await vscode.commands.executeCommand('vscode.openFolder', fileUri, { forceNewWindow: newWindow });
+                        commandExecuted = true;
+                        this.logOperation('openWorkspace.wsl.workspaceFile.success', { fileUri: fileUri.toString() });
+                    } catch (commandError) {
+                        this.logError('openWorkspace.wsl.workspaceFile.command', commandError, { fileUri: fileUri.toString() });
+                        throw commandError;
+                    }
+                } else {
+                    // For folders, use vscode-remote URI
+                    const wslUri = `vscode-remote://wsl+${distro}${wslPath}`;
+                    uri = vscode.Uri.parse(wslUri);
+                    this.logOperation('openWorkspace.wsl.folder', {
+                        wslUri,
+                        parsedUri: uri.toString(),
+                        originalPath: workspace.path,
+                        distro
+                    });
+
+                    try {
+                        await vscode.commands.executeCommand('vscode.openFolder', uri, { forceNewWindow: newWindow });
+                        commandExecuted = true;
+                        this.logOperation('openWorkspace.wsl.folder.success', { wslUri });
+                    } catch (commandError) {
+                        this.logError('openWorkspace.wsl.folder.command', commandError, { wslUri });
+                        throw commandError;
+                    }
+                }
             } else if (workspace.location.type === 'remote') {
                 // For remote workspaces, parse the URI as-is
                 uri = vscode.Uri.parse(workspace.path);
-                console.log('Opening remote workspace:', workspace.path);
+                this.logOperation('openWorkspace.remote', {
+                    originalPath: workspace.path,
+                    parsedUri: uri.toString()
+                });
+
+                try {
+                    await vscode.commands.executeCommand('vscode.openFolder', uri, { forceNewWindow: newWindow });
+                    commandExecuted = true;
+                    this.logOperation('openWorkspace.remote.success', { uri: uri.toString() });
+                } catch (commandError) {
+                    this.logError('openWorkspace.remote.command', commandError, { uri: uri.toString() });
+                    throw commandError;
+                }
             } else {
                 // For local workspaces, use file URI
                 uri = vscode.Uri.file(workspace.path);
-            }
+                this.logOperation('openWorkspace.local', {
+                    originalPath: workspace.path,
+                    fileUri: uri.toString()
+                });
 
-            // Open folder or workspace
-            await vscode.commands.executeCommand('vscode.openFolder', uri, { forceNewWindow: newWindow });
+                try {
+                    await vscode.commands.executeCommand('vscode.openFolder', uri, { forceNewWindow: newWindow });
+                    commandExecuted = true;
+                    this.logOperation('openWorkspace.local.success', { uri: uri.toString() });
+                } catch (commandError) {
+                    this.logError('openWorkspace.local.command', commandError, { uri: uri.toString() });
+                    throw commandError;
+                }
+            }
 
             // Update last opened time
             workspace.lastOpened = new Date();
             await this.storage.saveWorkspace(workspace);
+            this.logOperation('openWorkspace.updated', { workspaceId: workspace.id, lastOpened: workspace.lastOpened });
 
             // Increment tag usage
             for (const tagName of workspace.tags) {
                 await this.storage.incrementTagUsage(tagName);
             }
+            this.logOperation('openWorkspace.tagsUpdated', { workspaceId: workspace.id, tags: workspace.tags });
 
             this.fireWorkspacesChanged();
+            this.logOperation('openWorkspace.completed', {
+                workspaceId: workspace.id,
+                workspaceName: workspace.name,
+                commandExecuted
+            });
+
         } catch (error) {
-            console.error('Failed to open workspace:', error);
+            this.logError('openWorkspace', error, {
+                workspaceId: workspace.id,
+                workspaceName: workspace.name,
+                workspacePath: workspace.path,
+                locationType: workspace.location.type
+            });
+
             const errorMessage = error instanceof Error ? error.message : String(error);
             vscode.window.showErrorMessage(`Failed to open workspace "${workspace.name}": ${errorMessage}`);
 
@@ -172,7 +419,8 @@ export class WorkspaceManager {
                     'WSL workspace opening failed. Make sure:\n' +
                     '1. WSL extension is installed\n' +
                     '2. WSL distribution is running\n' +
-                    '3. VS Code Remote WSL extension is installed'
+                    '3. VS Code Remote WSL extension is installed\n' +
+                    '4. Check the Developer Console (Ctrl+Shift+P > Developer: Toggle Developer Tools) for detailed logs'
                 );
             }
         }

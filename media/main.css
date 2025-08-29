@@ -682,3 +682,4 @@ body {
 .codicon-file::before { content: "📄"; }
 .codicon-search::before { content: "🔍"; }
 .codicon-tag::before { content: "🏷"; }
+.codicon-folder-opened::before { content: "📂"; }
