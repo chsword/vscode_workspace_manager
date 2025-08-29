@@ -1,0 +1,189 @@
+{
+  "name": "workspace-manager",
+  "displayName": "Workspace Manager",
+  "description": "Manage and organize your VS Code workspaces with advanced features like tagging, location tracking, and sync",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.103.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "workspaceManager.showWorkspaces",
+        "title": "Show Workspaces",
+        "category": "Workspace Manager",
+        "icon": "$(folder-library)"
+      },
+      {
+        "command": "workspaceManager.refreshWorkspaces",
+        "title": "Refresh Workspaces",
+        "category": "Workspace Manager",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "workspaceManager.openSettings",
+        "title": "Open Settings",
+        "category": "Workspace Manager",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "workspaceManager.openWorkspace",
+        "title": "Open Workspace",
+        "category": "Workspace Manager"
+      },
+      {
+        "command": "workspaceManager.addToFavorites",
+        "title": "Add to Favorites",
+        "category": "Workspace Manager",
+        "icon": "$(star-empty)"
+      },
+      {
+        "command": "workspaceManager.removeFromFavorites",
+        "title": "Remove from Favorites",
+        "category": "Workspace Manager",
+        "icon": "$(star-full)"
+      },
+      {
+        "command": "workspaceManager.editTags",
+        "title": "Edit Tags",
+        "category": "Workspace Manager",
+        "icon": "$(tag)"
+      },
+      {
+        "command": "workspaceManager.editDescription",
+        "title": "Edit Description",
+        "category": "Workspace Manager",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "workspaceManager.removeWorkspace",
+        "title": "Remove from List",
+        "category": "Workspace Manager",
+        "icon": "$(trash)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "workspaceManagerContainer",
+          "title": "Workspace Manager",
+          "icon": "$(folder-library)"
+        }
+      ]
+    },
+    "views": {
+      "workspaceManagerContainer": [
+        {
+          "id": "workspaceManagerView",
+          "name": "Workspaces",
+          "type": "webview"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "workspaceManager.refreshWorkspaces",
+          "when": "view == workspaceManagerView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "workspaceManager.openSettings",
+          "when": "view == workspaceManagerView",
+          "group": "navigation@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Workspace Manager",
+      "properties": {
+        "workspaceManager.autoSync": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically sync VS Code workspace history"
+        },
+        "workspaceManager.syncInterval": {
+          "type": "number",
+          "default": 5,
+          "description": "Sync interval in minutes"
+        },
+        "workspaceManager.maxRecentWorkspaces": {
+          "type": "number",
+          "default": 50,
+          "description": "Maximum number of recent workspaces to track"
+        },
+        "workspaceManager.showFullPath": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show full path in workspace list"
+        },
+        "workspaceManager.autoTagging": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically tag workspaces based on content"
+        },
+        "workspaceManager.excludedFolders": {
+          "type": "array",
+          "default": [
+            "node_modules",
+            ".git",
+            "dist",
+            "build",
+            "out"
+          ],
+          "description": "Folders to exclude when scanning workspaces"
+        },
+        "workspaceManager.defaultTags": {
+          "type": "array",
+          "default": [
+            "Work",
+            "Personal",
+            "Frontend",
+            "Backend",
+            "Learning"
+          ],
+          "description": "Default tags available for workspaces"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/uuid": "^9.0.8",
+    "@types/vscode": "^1.103.0",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
+    "@typescript-eslint/parser": "^8.39.0",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.25.8",
+    "eslint": "^9.32.0",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "chokidar": "^3.5.3",
+    "uuid": "^9.0.1"
+  }
+}
