@@ -1,12 +1,13 @@
-# worksp# Workspace Manager
+# Workspace Manager
 
 *Read this in other languages: [English](README.md), [中文](README.zh-cn.md)*
 
-A powerful VS Code extension for managing and organizing your workspaces with advanced features like tagging, location tracking, and automatic synchronization.
+A powerful VS Code extension for managing and organizing your workspaces with advanced features like tagging, location tracking, and **real VS Code history synchronization**.
 
 ## ✨ Features
 
 ### 🗂️ Workspace Management
+- **Real VS Code Sync**: Directly reads from VS Code's SQLite database (`state.vscdb`) for accurate history
 - **Automatic Detection**: Syncs with VS Code's recently opened workspaces and files
 - **Smart Organization**: Categorizes workspaces by location (Local, WSL, Remote)
 - **Multiple Types**: Supports workspaces, folders, and individual files
@@ -19,15 +20,17 @@ A powerful VS Code extension for managing and organizing your workspaces with ad
 ### 📍 Location Intelligence
 - **Local Workspaces**: Organize by drive and external storage
 - **WSL Integration**: Seamlessly manage Windows Subsystem for Linux projects
-- **Remote Development**: Track SSH and remote server workspaces
+- **Remote Development**: Track SSH and remote server workspaces with proper labels
 
 ### ⭐ Personal Organization
 - **Favorites**: Mark important workspaces for quick access
 - **Pinning**: Pin frequently used workspaces to the top
 - **Descriptions**: Add custom descriptions to remember project details
 
-### 🔄 Automatic Synchronization
-- **Real-time Sync**: Automatically tracks newly opened workspaces
+### 🔄 Real-Time Synchronization
+- **SQLite Database Reader**: Reads VS Code's actual storage for 100% accurate history
+- **Cross-Platform Support**: Works on Windows, macOS, and Linux
+- **Remote Workspace Support**: Handles WSL, SSH, and other remote connections
 - **Configurable Intervals**: Set custom sync frequency
 - **Project Detection**: Auto-detects frameworks, languages, and tools
 
@@ -35,7 +38,7 @@ A powerful VS Code extension for managing and organizing your workspaces with ad
 
 1. **Install the Extension**: Search for "Workspace Manager" in VS Code extensions
 2. **Open the Panel**: Click on the Workspace Manager icon in the activity bar
-3. **Automatic Setup**: The extension will automatically detect your recent workspaces
+3. **Automatic Setup**: The extension will automatically sync from VS Code's history database
 4. **Start Organizing**: Add tags, descriptions, and favorites to your workspaces
 
 ## 📖 Usage

@@ -12,7 +12,7 @@ export class WorkspaceManager {
 
     constructor(
         private readonly storage: WorkspaceStorage,
-        private readonly syncService: WorkspaceSyncService
+        public readonly syncService: WorkspaceSyncService
     ) {}
 
     /**

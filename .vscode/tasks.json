@@ -21,7 +21,7 @@
             "type": "npm",
             "script": "watch:esbuild",
             "group": "build",
-            "problemMatcher": "$esbuild-watch",
+            "problemMatcher": "$tsc-watch",
             "isBackground": true,
             "label": "npm: watch:esbuild",
             "presentation": {
@@ -51,6 +51,14 @@
 				"group": "watchers"
 			},
 			"group": "build"
+		},
+		{
+			"type": "npm",
+			"script": "compile",
+			"group": "build",
+			"problemMatcher": "$tsc",
+			"label": "npm: compile",
+			"detail": "Compile TypeScript and bundle with esbuild"
 		},
 		{
 			"label": "tasks: watch-tests",

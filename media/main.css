@@ -74,6 +74,30 @@ body {
     background-color: var(--vscode-toolbar-hoverBackground);
 }
 
+.icon-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.icon-button .codicon-loading {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Sync button specific styles */
+#syncBtn.syncing {
+    background-color: var(--vscode-button-secondaryBackground);
+}
+
+#autoSyncBtn.active {
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+}
+
 /* Filter Styles */
 .filters {
     padding: var(--container-padding);

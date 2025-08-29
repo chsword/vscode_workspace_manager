@@ -19,7 +19,9 @@
 
     // DOM Elements
     const searchInput = document.getElementById('searchInput');
+    const syncBtn = document.getElementById('syncBtn');
     const refreshBtn = document.getElementById('refreshBtn');
+    const autoSyncBtn = document.getElementById('autoSyncBtn');
     const settingsBtn = document.getElementById('settingsBtn');
     const workspaceList = document.getElementById('workspaceList');
     const tagFilters = document.getElementById('tagFilters');
@@ -45,6 +47,24 @@
         // Refresh button
         refreshBtn.addEventListener('click', () => {
             vscode.postMessage({ type: 'refreshWorkspaces' });
+        });
+
+        // Sync button
+        syncBtn.addEventListener('click', () => {
+            syncBtn.querySelector('.codicon').classList.add('codicon-loading');
+            syncBtn.disabled = true;
+            vscode.postMessage({ type: 'syncWorkspaces' });
+            
+            // Reset button state after a delay
+            setTimeout(() => {
+                syncBtn.querySelector('.codicon').classList.remove('codicon-loading');
+                syncBtn.disabled = false;
+            }, 2000);
+        });
+
+        // Auto sync toggle button
+        autoSyncBtn.addEventListener('click', () => {
+            vscode.postMessage({ type: 'toggleAutoSync' });
         });
 
         // Settings button

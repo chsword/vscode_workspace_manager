@@ -67,6 +67,30 @@
         "title": "Remove from List",
         "category": "Workspace Manager",
         "icon": "$(trash)"
+      },
+      {
+        "command": "workspaceManager.syncWorkspaces",
+        "title": "Sync VS Code History",
+        "category": "Workspace Manager",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "workspaceManager.toggleAutoSync",
+        "title": "Toggle Auto Sync",
+        "category": "Workspace Manager",
+        "icon": "$(sync-ignored)"
+      },
+      {
+        "command": "workspaceManager.configureSyncInterval",
+        "title": "Configure Sync Interval",
+        "category": "Workspace Manager",
+        "icon": "$(clock)"
+      },
+      {
+        "command": "workspaceManager.openInEditor",
+        "title": "Open Workspace Manager",
+        "category": "Workspace Manager",
+        "icon": "$(folder-library)"
       }
     ],
     "viewsContainers": {
@@ -90,14 +114,24 @@
     "menus": {
       "view/title": [
         {
-          "command": "workspaceManager.refreshWorkspaces",
+          "command": "workspaceManager.syncWorkspaces",
           "when": "view == workspaceManagerView",
           "group": "navigation@1"
         },
         {
-          "command": "workspaceManager.openSettings",
+          "command": "workspaceManager.openInEditor",
           "when": "view == workspaceManagerView",
           "group": "navigation@2"
+        },
+        {
+          "command": "workspaceManager.refreshWorkspaces",
+          "when": "view == workspaceManagerView",
+          "group": "navigation@3"
+        },
+        {
+          "command": "workspaceManager.openSettings",
+          "when": "view == workspaceManagerView",
+          "group": "navigation@4"
         }
       ]
     },
@@ -150,6 +184,11 @@
             "Learning"
           ],
           "description": "Default tags available for workspaces"
+        },
+        "workspaceManager.cachedRecentPaths": {
+          "type": "array",
+          "default": [],
+          "description": "Cached recent workspace paths (internal use)"
         }
       }
     }
@@ -171,6 +210,7 @@
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
+    "@types/sqlite3": "^5.1.0",
     "@types/uuid": "^9.0.8",
     "@types/vscode": "^1.103.0",
     "@typescript-eslint/eslint-plugin": "^8.39.0",
@@ -184,6 +224,7 @@
   },
   "dependencies": {
     "chokidar": "^3.5.3",
+    "sqlite3": "^5.1.7",
     "uuid": "^9.0.1"
   }
 }

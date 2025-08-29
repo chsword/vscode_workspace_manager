@@ -1,85 +1,92 @@
 import * as vscode from 'vscode';
 import { WorkspaceManager } from '../workspaceManager';
-import { WorkspaceItem, WorkspaceFilter } from '../types';
 
 /**
- * Webview provider for the workspace manager view
+ * Webview panel for displaying workspace manager in editor area
  */
-export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
-    public static readonly viewType = 'workspaceManagerView';
+export class WorkspaceWebviewPanel {
+    public static readonly viewType = 'workspaceManagerPanel';
+    private static currentPanel: WorkspaceWebviewPanel | undefined;
 
-    private _view?: vscode.WebviewView;
+    public static createOrShow(extensionUri: vscode.Uri, workspaceManager: WorkspaceManager): void {
+        // Always open in the main editor area
+        const column = vscode.ViewColumn.One;
 
-    constructor(
-        private readonly extensionUri: vscode.Uri,
-        private readonly workspaceManager: WorkspaceManager
-    ) {
-        // Listen for workspace changes
-        this.workspaceManager.onWorkspacesChanged(() => {
-            this.refresh();
-        });
-    }
-
-    /**
-     * Resolve webview view
-     */
-    public resolveWebviewView(
-        webviewView: vscode.WebviewView,
-        context: vscode.WebviewViewResolveContext,
-        _token: vscode.CancellationToken,
-    ) {
-        this._view = webviewView;
-
-        webviewView.webview.options = {
-            enableScripts: true,
-            localResourceRoots: [this.extensionUri]
-        };
-
-        webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
-
-        // Handle messages from webview
-        webviewView.webview.onDidReceiveMessage(async (data) => {
-            await this.handleMessage(data);
-        });
-
-        // Initial load
-        this.updateContent();
-    }
-
-    /**
-     * Refresh the webview content
-     */
-    public refresh(): void {
-        if (this._view) {
-            this.updateContent();
-        }
-    }
-
-    /**
-     * Update webview content with current workspace data
-     */
-    private async updateContent(): Promise<void> {
-        if (!this._view) {
+        // If panel already exists, show it
+        if (WorkspaceWebviewPanel.currentPanel) {
+            WorkspaceWebviewPanel.currentPanel.panel.reveal(column);
             return;
         }
 
+        // Create new panel in editor area
+        const panel = vscode.window.createWebviewPanel(
+            WorkspaceWebviewPanel.viewType,
+            'Workspace Manager',
+            column,
+            {
+                enableScripts: true,
+                retainContextWhenHidden: true,
+                localResourceRoots: [
+                    vscode.Uri.joinPath(extensionUri, 'media')
+                ]
+            }
+        );
+
+        WorkspaceWebviewPanel.currentPanel = new WorkspaceWebviewPanel(panel, extensionUri, workspaceManager);
+    }
+
+    public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, workspaceManager: WorkspaceManager): void {
+        WorkspaceWebviewPanel.currentPanel = new WorkspaceWebviewPanel(panel, extensionUri, workspaceManager);
+    }
+
+    private constructor(
+        public readonly panel: vscode.WebviewPanel,
+        private readonly extensionUri: vscode.Uri,
+        private readonly workspaceManager: WorkspaceManager
+    ) {
+        this.update();
+        this.panel.onDidDispose(() => this.dispose(), null);
+        this.panel.onDidChangeViewState(() => {
+            if (this.panel.visible) {
+                this.update();
+            }
+        });
+
+        // Handle messages from webview
+        this.panel.webview.onDidReceiveMessage(
+            message => this.handleMessage(message),
+            undefined
+        );
+    }
+
+    public dispose(): void {
+        WorkspaceWebviewPanel.currentPanel = undefined;
+        this.panel.dispose();
+    }
+
+    public refresh(): void {
+        this.update();
+    }
+
+    private async update(): Promise<void> {
+        this.panel.title = 'Workspace Manager';
+        this.panel.webview.html = this.getHtmlForWebview();
+        
+        // Send initial data
         try {
             const workspaces = await this.workspaceManager.getWorkspaces();
             const tags = await this.workspaceManager.getTags();
             
-            this._view.webview.postMessage({
+            this.panel.webview.postMessage({
                 type: 'updateWorkspaces',
                 workspaces,
                 tags
             });
         } catch (error) {
-            console.error('Failed to update webview content:', error);
+            console.error('Failed to update webview panel:', error);
         }
     }
 
-    /**
-     * Handle messages from webview
-     */
     private async handleMessage(data: any): Promise<void> {
         try {
             switch (data.type) {
@@ -89,58 +96,50 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
 
                 case 'addToFavorites':
                     await this.workspaceManager.addToFavorites(data.id);
+                    this.refresh();
                     break;
 
                 case 'removeFromFavorites':
                     await this.workspaceManager.removeFromFavorites(data.id);
-                    break;
-
-                case 'pinWorkspace':
-                    await this.workspaceManager.pinWorkspace(data.id);
-                    break;
-
-                case 'unpinWorkspace':
-                    await this.workspaceManager.unpinWorkspace(data.id);
+                    this.refresh();
                     break;
 
                 case 'editTags':
                     await this.workspaceManager.editTags(data.id);
+                    this.refresh();
                     break;
 
                 case 'editDescription':
                     await this.workspaceManager.editDescription(data.id);
+                    this.refresh();
                     break;
 
                 case 'removeWorkspace':
                     await this.workspaceManager.removeWorkspace(data.id);
+                    this.refresh();
                     break;
 
                 case 'refreshWorkspaces':
                     await this.workspaceManager.refreshWorkspaces();
+                    this.refresh();
                     break;
 
                 case 'syncWorkspaces':
-                    vscode.commands.executeCommand('workspaceManager.syncWorkspaces');
+                    await vscode.commands.executeCommand('workspaceManager.syncWorkspaces');
+                    this.refresh();
                     break;
 
                 case 'toggleAutoSync':
-                    vscode.commands.executeCommand('workspaceManager.toggleAutoSync');
+                    await vscode.commands.executeCommand('workspaceManager.toggleAutoSync');
                     break;
 
-                case 'configureSyncInterval':
-                    vscode.commands.executeCommand('workspaceManager.configureSyncInterval');
-                    break;
-
-                case 'filterWorkspaces':
-                    await this.handleFilterWorkspaces(data.filter);
+                case 'openSettings':
+                    await vscode.commands.executeCommand('workspaceManager.openSettings');
                     break;
 
                 case 'ready':
-                    await this.updateContent();
+                    this.update();
                     break;
-
-                default:
-                    console.warn('Unknown message type:', data.type);
             }
         } catch (error) {
             console.error('Error handling webview message:', error);
@@ -148,41 +147,49 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
         }
     }
 
-    /**
-     * Handle workspace filtering
-     */
-    private async handleFilterWorkspaces(filter: WorkspaceFilter): Promise<void> {
-        if (!this._view) {
-            return;
-        }
-
-        const workspaces = await this.workspaceManager.getWorkspaces(filter);
-        
-        this._view.webview.postMessage({
-            type: 'updateWorkspaces',
-            workspaces
-        });
-    }
-
-    /**
-     * Get HTML content for webview
-     */
-    private getHtmlForWebview(webview: vscode.Webview): string {
-        // Get URIs for resources
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'main.js'));
-        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'main.css'));
+    private getHtmlForWebview(): string {
+        const scriptUri = this.panel.webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionUri, 'media', 'main.js')
+        );
+        const styleUri = this.panel.webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionUri, 'media', 'main.css')
+        );
 
         return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${this.panel.webview.cspSource} 'unsafe-inline'; script-src ${this.panel.webview.cspSource};">
     <link href="${styleUri}" rel="stylesheet">
     <title>Workspace Manager</title>
+    <style>
+        body {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--vscode-panel-border);
+            padding-bottom: 15px;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            color: var(--vscode-foreground);
+            font-size: 24px;
+        }
+        .workspace-item {
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 8px;
+        }
+    </style>
 </head>
 <body>
     <div id="app">
         <div class="header">
+            <h1>📁 Workspace Manager</h1>
             <div class="search-container">
                 <input type="text" id="searchInput" placeholder="🔍 Search workspaces..." />
             </div>
