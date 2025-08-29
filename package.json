@@ -1,9 +1,9 @@
 {
-  "name": "zoujian-workspace-manager",
-  "displayName": "VS Code Workspace Manager",
+  "name": "chsword-workspace-manager",
+  "displayName": "VSCode Workspace Manager - chs",
   "description": "Manage and organize your VS Code workspaces with advanced features like tagging, location tracking, and sync",
   "version": "0.0.1",
-  "publisher": "zoujian",
+  "publisher": "chsword",
   "repository": {
     "type": "git",
     "url": "https://github.com/chsword/vscode_workspace_manager.git"
