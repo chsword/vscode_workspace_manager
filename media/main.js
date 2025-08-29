@@ -346,18 +346,13 @@
         // Add event listeners
         workspaceList.querySelectorAll('.workspace-item').forEach(item => {
             item.addEventListener('click', (e) => {
+                // Only handle clicks on the item itself, not on action buttons
                 if (e.target.closest('.workspace-actions') || e.target.closest('.action-btn')) {
-                    return; // Don't open workspace if clicking on action buttons
+                    return; // Don't handle workspace opening if clicking on action buttons
                 }
                 
-                const workspaceId = item.dataset.workspaceId;
-                const newWindow = e.ctrlKey || e.metaKey;
-                
-                vscode.postMessage({
-                    type: 'openWorkspace',
-                    id: workspaceId,
-                    newWindow
-                });
+                // For now, clicking the card does nothing - users should use the open button
+                // This prevents accidental workspace opening
             });
 
             item.addEventListener('contextmenu', (e) => {
@@ -398,6 +393,10 @@
                         ${escapeHtml(workspace.name)}
                     </div>
                     <div class="workspace-actions">
+                        <button class="action-btn open-btn" data-action="openWorkspace" 
+                                title="Open workspace">
+                            <span class="codicon codicon-folder-opened"></span>
+                        </button>
                         <button class="action-btn" data-action="${workspace.isFavorite ? 'removeFromFavorites' : 'addToFavorites'}" 
                                 title="${workspace.isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
                             <span class="codicon codicon-star${workspace.isFavorite ? '-full' : '-empty'}"></span>
@@ -494,6 +493,7 @@
     // Handle workspace actions
     function handleWorkspaceAction(action, workspaceId) {
         const messageMap = {
+            'openWorkspace': { type: 'openWorkspace', id: workspaceId, newWindow: false },
             'addToFavorites': { type: 'addToFavorites', id: workspaceId },
             'removeFromFavorites': { type: 'removeFromFavorites', id: workspaceId },
             'pinWorkspace': { type: 'pinWorkspace', id: workspaceId },

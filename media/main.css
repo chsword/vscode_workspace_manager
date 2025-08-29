@@ -397,7 +397,22 @@ body {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.action-btn:active {
+.action-btn.open-btn {
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border: 1px solid var(--vscode-button-border);
+    margin-right: 8px;
+}
+
+.action-btn.open-btn:hover {
+    background-color: var(--vscode-button-hoverBackground);
+    border-color: var(--vscode-button-border);
+    transform: scale(1.1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.action-btn.open-btn:active {
+    background-color: var(--vscode-button-background);
     transform: scale(0.95);
 }
 

@@ -1102,11 +1102,12 @@ export class WorkspaceSyncService {
             workspacePath.includes('wsl+') ||
             workspacePath.includes('/mnt/c/') ||
             workspacePath.includes('/mnt/d/')) {
+            const wslDistribution = this.extractWSLDistribution(workspacePath);
             return {
                 type: 'wsl',
-                displayName: 'WSL',
+                displayName: wslDistribution !== 'Unknown' ? `WSL: ${wslDistribution}` : 'WSL',
                 details: {
-                    wslDistribution: this.extractWSLDistribution(workspacePath)
+                    wslDistribution: wslDistribution
                 }
             };
         }
