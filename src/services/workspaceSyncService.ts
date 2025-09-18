@@ -81,24 +81,34 @@ export class WorkspaceSyncService {
         try {
             console.log('开始同步 VS Code 工作区历史记录...');
             
-            // 从SQLite数据库读取历史记录，包含顺序信息
-            const sqliteWorkspacesWithOrder = await this.readVSCodeSQLiteHistoryWithOrder();
-            console.log(`从SQLite数据库读取到 ${sqliteWorkspacesWithOrder.length} 个工作区`);
+            let newWorkspaces: WorkspaceItem[] = [];
             
-            if (sqliteWorkspacesWithOrder.length === 0) {
-                throw new Error('无法从 VS Code 数据库读取历史记录。请确保 VS Code 已关闭，或数据库文件存在。');
-            }
-            
-            // 转换为WorkspaceItem格式
-            const newWorkspaces: WorkspaceItem[] = [];
-            for (const workspaceData of sqliteWorkspacesWithOrder) {
-                try {
-                    const workspaceItem = await this.createWorkspaceItemWithOrder(workspaceData.path, workspaceData.order, sqliteWorkspacesWithOrder.length);
-                    if (workspaceItem) {
-                        newWorkspaces.push(workspaceItem);
+            try {
+                // 尝试从SQLite数据库读取历史记录，包含顺序信息
+                const sqliteWorkspacesWithOrder = await this.readVSCodeSQLiteHistoryWithOrder();
+                console.log(`从SQLite数据库读取到 ${sqliteWorkspacesWithOrder.length} 个工作区`);
+                
+                // 转换为WorkspaceItem格式
+                for (const workspaceData of sqliteWorkspacesWithOrder) {
+                    try {
+                        const workspaceItem = await this.createWorkspaceItemWithOrder(workspaceData.path, workspaceData.order, sqliteWorkspacesWithOrder.length);
+                        if (workspaceItem) {
+                            newWorkspaces.push(workspaceItem);
+                        }
+                    } catch (error) {
+                        console.warn(`处理工作区失败: ${workspaceData.path}`, error);
                     }
-                } catch (error) {
-                    console.warn(`处理工作区失败: ${workspaceData.path}`, error);
+                }
+            } catch (sqliteError) {
+                console.warn('SQLite数据库读取失败，尝试使用fallback方法:', sqliteError);
+                
+                // Fallback: 使用VS Code API和缓存的路径
+                try {
+                    newWorkspaces = await this.getFallbackWorkspaces();
+                    console.log(`Fallback方法获取到 ${newWorkspaces.length} 个工作区`);
+                } catch (fallbackError) {
+                    console.error('Fallback方法也失败了:', fallbackError);
+                    throw new Error('无法获取工作区历史记录。请确保VS Code已正确安装并运行过，或手动添加工作区。');
                 }
             }
             
@@ -262,35 +272,23 @@ export class WorkspaceSyncService {
         const workspaces: string[] = [];
         
         try {
-            const platform = os.platform();
-            const homeDir = os.homedir();
+            const dbPath = await this.findVSCodeDatabase();
             
-            let dbPath: string;
-            
-            switch (platform) {
-                case 'win32':
-                    dbPath = path.join(process.env.APPDATA || '', 'Code', 'User', 'globalStorage', 'state.vscdb');
-                    break;
-                case 'darwin':
-                    dbPath = path.join(homeDir, 'Library', 'Application Support', 'Code', 'User', 'globalStorage', 'state.vscdb');
-                    break;
-                case 'linux':
-                    dbPath = path.join(homeDir, '.config', 'Code', 'User', 'globalStorage', 'state.vscdb');
-                    break;
-                default:
-                    throw new Error(`不支持的操作系统平台: ${platform}`);
+            if (!dbPath) {
+                throw new Error('无法找到 VS Code 数据库文件。请确保 VS Code 已正确安装并至少运行过一次。');
             }
 
-            console.log(`正在查找 VS Code 数据库: ${dbPath}`);
-
-            if (!fs.existsSync(dbPath)) {
-                throw new Error(`VS Code 数据库文件不存在: ${dbPath}。请确保 VS Code 已正确安装并至少运行过一次。`);
-            }
+            console.log(`正在使用 VS Code 数据库: ${dbPath}`);
 
             console.log('正在读取 VS Code 历史记录...');
 
             // 使用Node.js sqlite3包直接读取数据库
-            const sqlite3 = require('sqlite3');
+            let sqlite3;
+            try {
+                sqlite3 = require('sqlite3');
+            } catch (error) {
+                throw new Error('SQLite3 模块未找到。请确保已正确安装依赖。');
+            }
             
             const historyData = await new Promise<string>((resolve, reject) => {
                 const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err: any) => {
@@ -372,11 +370,29 @@ export class WorkspaceSyncService {
             }
             
         } catch (error) {
+            let errorMessage = '读取 VS Code SQLite 历史记录失败';
+            
             if (error instanceof Error) {
-                console.error('读取 VS Code SQLite 历史记录失败:', error.message);
-                throw error;
+                if (error.message.includes('无法找到 VS Code 数据库文件')) {
+                    errorMessage = 'VS Code 数据库文件未找到。这可能是因为：\n' +
+                        '1. VS Code 尚未运行过\n' +
+                        '2. 使用的是便携版或特殊安装版本\n' +
+                        '3. VS Code 安装在非标准位置\n' +
+                        '建议：请先在VS Code中打开一些文件夹，然后重试同步。';
+                } else if (error.message.includes('SQLite3 模块未找到')) {
+                    errorMessage = 'SQLite3 依赖模块未正确安装。请重新安装扩展或联系开发者。';
+                } else if (error.message.includes('无法打开数据库')) {
+                    errorMessage = 'VS Code 数据库文件被锁定或损坏。请确保VS Code已完全关闭，然后重试。';
+                } else if (error.message.includes('没有找到历史记录数据')) {
+                    errorMessage = 'VS Code 数据库中没有工作区历史记录。请在VS Code中打开一些文件夹后重试。';
+                } else {
+                    errorMessage = `${errorMessage}: ${error.message}`;
+                }
+                
+                console.error(errorMessage);
+                throw new Error(errorMessage);
             }
-            throw new Error(`未知错误: ${String(error)}`);
+            throw new Error(`${errorMessage}: ${String(error)}`);
         }
 
         return workspaces;
@@ -389,35 +405,23 @@ export class WorkspaceSyncService {
         const workspacesWithOrder: Array<{path: string, order: number}> = [];
         
         try {
-            const platform = os.platform();
-            const homeDir = os.homedir();
+            const dbPath = await this.findVSCodeDatabase();
             
-            let dbPath: string;
-            
-            switch (platform) {
-                case 'win32':
-                    dbPath = path.join(process.env.APPDATA || '', 'Code', 'User', 'globalStorage', 'state.vscdb');
-                    break;
-                case 'darwin':
-                    dbPath = path.join(homeDir, 'Library', 'Application Support', 'Code', 'User', 'globalStorage', 'state.vscdb');
-                    break;
-                case 'linux':
-                    dbPath = path.join(homeDir, '.config', 'Code', 'User', 'globalStorage', 'state.vscdb');
-                    break;
-                default:
-                    throw new Error(`不支持的操作系统平台: ${platform}`);
+            if (!dbPath) {
+                throw new Error('无法找到 VS Code 数据库文件。请确保 VS Code 已正确安装并至少运行过一次。');
             }
 
-            console.log(`正在查找 VS Code 数据库: ${dbPath}`);
-
-            if (!fs.existsSync(dbPath)) {
-                throw new Error(`VS Code 数据库文件不存在: ${dbPath}。请确保 VS Code 已正确安装并至少运行过一次。`);
-            }
+            console.log(`正在使用 VS Code 数据库: ${dbPath}`);
 
             console.log('正在读取 VS Code 历史记录...');
 
             // 使用Node.js sqlite3包直接读取数据库
-            const sqlite3 = require('sqlite3');
+            let sqlite3;
+            try {
+                sqlite3 = require('sqlite3');
+            } catch (error) {
+                throw new Error('SQLite3 模块未找到。请确保已正确安装依赖。');
+            }
             
             const historyData = await new Promise<string>((resolve, reject) => {
                 const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err: any) => {
@@ -500,11 +504,29 @@ export class WorkspaceSyncService {
             }
             
         } catch (error) {
+            let errorMessage = '读取 VS Code SQLite 历史记录失败';
+            
             if (error instanceof Error) {
-                console.error('读取 VS Code SQLite 历史记录失败:', error.message);
-                throw error;
+                if (error.message.includes('无法找到 VS Code 数据库文件')) {
+                    errorMessage = 'VS Code 数据库文件未找到。这可能是因为：\n' +
+                        '1. VS Code 尚未运行过\n' +
+                        '2. 使用的是便携版或特殊安装版本\n' +
+                        '3. VS Code 安装在非标准位置\n' +
+                        '建议：请先在VS Code中打开一些文件夹，然后重试同步。';
+                } else if (error.message.includes('SQLite3 模块未找到')) {
+                    errorMessage = 'SQLite3 依赖模块未正确安装。请重新安装扩展或联系开发者。';
+                } else if (error.message.includes('无法打开数据库')) {
+                    errorMessage = 'VS Code 数据库文件被锁定或损坏。请确保VS Code已完全关闭，然后重试。';
+                } else if (error.message.includes('没有找到历史记录数据')) {
+                    errorMessage = 'VS Code 数据库中没有工作区历史记录。请在VS Code中打开一些文件夹后重试。';
+                } else {
+                    errorMessage = `${errorMessage}: ${error.message}`;
+                }
+                
+                console.error(errorMessage);
+                throw new Error(errorMessage);
             }
-            throw new Error(`未知错误: ${String(error)}`);
+            throw new Error(`${errorMessage}: ${String(error)}`);
         }
 
         return workspacesWithOrder;
@@ -1372,6 +1394,141 @@ export class WorkspaceSyncService {
             // Restart with new interval
             this.startAutoSync();
         }
+    }
+
+    /**
+     * Find VS Code database file with support for different installation types
+     */
+    private async findVSCodeDatabase(): Promise<string | null> {
+        const platform = os.platform();
+        const homeDir = os.homedir();
+        
+        // Define possible database paths for different VS Code installations
+        const possiblePaths: string[] = [];
+        
+        switch (platform) {
+            case 'win32':
+                // Regular installation
+                possiblePaths.push(path.join(process.env.APPDATA || '', 'Code', 'User', 'globalStorage', 'state.vscdb'));
+                // Insider installation  
+                possiblePaths.push(path.join(process.env.APPDATA || '', 'Code - Insiders', 'User', 'globalStorage', 'state.vscdb'));
+                // Portable installation (relative to VS Code executable)
+                if (process.env.VSCODE_PORTABLE) {
+                    possiblePaths.push(path.join(process.env.VSCODE_PORTABLE, 'user-data', 'User', 'globalStorage', 'state.vscdb'));
+                }
+                break;
+                
+            case 'darwin':
+                // Regular installation
+                possiblePaths.push(path.join(homeDir, 'Library', 'Application Support', 'Code', 'User', 'globalStorage', 'state.vscdb'));
+                // Insider installation
+                possiblePaths.push(path.join(homeDir, 'Library', 'Application Support', 'Code - Insiders', 'User', 'globalStorage', 'state.vscdb'));
+                break;
+                
+            case 'linux':
+                // Regular installation
+                possiblePaths.push(path.join(homeDir, '.config', 'Code', 'User', 'globalStorage', 'state.vscdb'));
+                // Insider installation
+                possiblePaths.push(path.join(homeDir, '.config', 'Code - Insiders', 'User', 'globalStorage', 'state.vscdb'));
+                // Snap installation
+                possiblePaths.push(path.join(homeDir, 'snap', 'code', 'current', '.config', 'Code', 'User', 'globalStorage', 'state.vscdb'));
+                // Flatpak installation
+                possiblePaths.push(path.join(homeDir, '.var', 'app', 'com.visualstudio.code', 'config', 'Code', 'User', 'globalStorage', 'state.vscdb'));
+                break;
+                
+            default:
+                console.error(`不支持的操作系统平台: ${platform}`);
+                return null;
+        }
+        
+        // Check each possible path
+        for (const dbPath of possiblePaths) {
+            try {
+                if (fs.existsSync(dbPath)) {
+                    console.log(`找到 VS Code 数据库: ${dbPath}`);
+                    // Verify we can read from the file
+                    const stats = fs.statSync(dbPath);
+                    if (stats.isFile() && stats.size > 0) {
+                        return dbPath;
+                    }
+                }
+            } catch (error) {
+                console.warn(`检查数据库路径失败: ${dbPath}`, error);
+            }
+        }
+        
+        // If no database found, provide helpful error message
+        console.error('未找到任何 VS Code 数据库文件。尝试过的路径:');
+        possiblePaths.forEach(p => console.error(`  - ${p}`));
+        
+        return null;
+    }
+
+    /**
+     * Fallback method to get workspaces when SQLite database is not available
+     */
+    private async getFallbackWorkspaces(): Promise<WorkspaceItem[]> {
+        const workspaces: WorkspaceItem[] = [];
+        
+        try {
+            // 1. 获取当前工作区
+            if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+                const currentPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+                try {
+                    const workspaceItem = await this.createWorkspaceItem(currentPath);
+                    if (workspaceItem) {
+                        workspaces.push(workspaceItem);
+                    }
+                } catch (error) {
+                    console.warn(`处理当前工作区失败: ${currentPath}`, error);
+                }
+            }
+            
+            // 2. 从配置中获取缓存的路径
+            const config = vscode.workspace.getConfiguration('workspaceManager');
+            const cachedPaths = config.get<string[]>('cachedRecentPaths', []);
+            
+            for (const cachedPath of cachedPaths) {
+                try {
+                    if (this.isValidPath(cachedPath)) {
+                        const workspaceItem = await this.createWorkspaceItem(cachedPath);
+                        if (workspaceItem && !workspaces.some(w => w.path === workspaceItem.path)) {
+                            workspaces.push(workspaceItem);
+                        }
+                    }
+                } catch (error) {
+                    console.warn(`处理缓存路径失败: ${cachedPath}`, error);
+                }
+            }
+            
+            // 3. 尝试从最近使用的文件夹推断
+            try {
+                const recentFiles = await vscode.window.showOpenDialog({
+                    canSelectFiles: false,
+                    canSelectFolders: true,
+                    canSelectMany: false,
+                    title: '选择工作区文件夹（取消以跳过）'
+                });
+                
+                if (recentFiles && recentFiles.length > 0) {
+                    const folderPath = recentFiles[0].fsPath;
+                    const workspaceItem = await this.createWorkspaceItem(folderPath);
+                    if (workspaceItem && !workspaces.some(w => w.path === workspaceItem.path)) {
+                        workspaces.push(workspaceItem);
+                    }
+                }
+            } catch (error) {
+                // 用户取消或其他错误，忽略
+                console.warn('用户跳过手动选择文件夹');
+            }
+            
+            console.log(`Fallback方法收集到 ${workspaces.length} 个工作区`);
+            
+        } catch (error) {
+            console.error('Fallback工作区收集失败:', error);
+        }
+        
+        return workspaces;
     }
 
     /**
