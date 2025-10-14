@@ -1,7 +1,7 @@
 .vscode/**
 .vscode-test/**
+.github/**
 out/**
-node_modules/**
 src/**
 .gitignore
 .yarnrc
@@ -12,3 +12,18 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
+
+# Exclude all node_modules by default
+node_modules/**
+
+# But include necessary native/runtime dependencies
+!node_modules/sqlite3/**
+!node_modules/@vscode/codicons/**
+!node_modules/uuid/**
+!node_modules/chokidar/**
+
+# Documentation files (optional)
+SANDBOX_SOLUTION_SUMMARY.md
+SQLITE_FIX_REPORT.md
+VSCODE_SANDBOX_RESEARCH.md
+WSL_DEBUG_README.md
