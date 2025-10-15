@@ -2,8 +2,9 @@
   "name": "chsword-workspace-manager",
   "displayName": "VSCode Workspace Manager - chs",
   "description": "Manage and organize your VS Code workspaces with advanced features like tagging, location tracking, and sync",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "publisher": "chsword",
+  "icon": "media/logo.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/chsword/vscode_workspace_manager.git"
@@ -186,12 +187,14 @@
     "version:patch": "npm version patch --no-git-tag-version",
     "version:minor": "npm version minor --no-git-tag-version",
     "version:major": "npm version major --no-git-tag-version",
+    "generate-logo": "node scripts/generate-logo-png.js",
     "build:vsix": "vsce package",
     "release:patch": "npm run version:patch && npm run build:vsix",
     "release:minor": "npm run version:minor && npm run build:vsix",
     "release:major": "npm run version:major && npm run build:vsix"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/sqlite3": "^5.1.0",
@@ -211,7 +214,6 @@
     "@vscode/codicons": "^0.0.39",
     "chokidar": "^3.5.3",
     "sqlite3": "^5.1.7",
-    
     "uuid": "^9.0.1"
   }
 }

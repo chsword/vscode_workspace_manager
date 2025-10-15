@@ -254,6 +254,9 @@ export class WorkspaceWebviewPanel {
         const styleUri = this.panel.webview.asWebviewUri(
             vscode.Uri.joinPath(this.extensionUri, 'media', 'main.css')
         );
+        const logoUri = this.panel.webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionUri, 'media', 'logo.svg')
+        );
         const codiconCssUri = this.panel.webview.asWebviewUri(
             vscode.Uri.joinPath(this.extensionUri, 'node_modules', '@vscode', 'codicons', 'dist', 'codicon.css')
         );
@@ -266,7 +269,7 @@ export class WorkspaceWebviewPanel {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${this.panel.webview.cspSource} 'unsafe-inline'; script-src ${this.panel.webview.cspSource}; font-src ${this.panel.webview.cspSource};">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${this.panel.webview.cspSource} 'unsafe-inline'; script-src ${this.panel.webview.cspSource}; font-src ${this.panel.webview.cspSource}; img-src ${this.panel.webview.cspSource} data:;">
     <link href="${styleUri}" rel="stylesheet">
     <link href="${codiconCssUri}" rel="stylesheet">
     <title>Workspace Manager</title>
@@ -304,7 +307,10 @@ export class WorkspaceWebviewPanel {
 <body>
     <div id="app">
         <div class="header">
-            <h1>📁 Workspace Manager</h1>
+            <div class="brand">
+                <img src="${logoUri}" class="app-logo" alt="Workspace Manager Logo" />
+                <span class="brand-name">Workspace Manager</span>
+            </div>
             <div class="search-container">
                 <div class="search-input-wrapper">
                     <input type="text" id="searchInput" placeholder="🔍 Search workspaces..." />

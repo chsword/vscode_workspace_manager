@@ -670,7 +670,7 @@ body.codicon-fallback .codicon::before { content: '' !important; }
 /* 搜索图标定位 */
 .search-icon {
     position: absolute;
-    left: 12px;
+    left: 14px;
     top: 50%;
     transform: translateY(-50%);
     color: var(--vscode-input-foreground);
@@ -705,6 +705,25 @@ body {
     position: relative;
 }
 
+/* Brand: square framed logo (no circle) */
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.app-logo {
+    width: 22px;
+    height: 22px;
+    display: block;
+    object-fit: contain;
+}
+.brand-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--vscode-foreground);
+}
+
 .header::after {
     content: '';
     position: absolute;
@@ -726,7 +745,7 @@ body {
 
 #searchInput {
     width: 100%;
-    padding: 8px 36px 8px 36px;
+    padding: 8px 40px 8px 44px;
     border: 1px solid var(--vscode-input-border);
     border-radius: 20px;
     background-color: var(--vscode-input-background);
@@ -742,6 +761,11 @@ body {
     border-color: var(--vscode-focusBorder);
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
     background-color: var(--vscode-input-background);
+}
+
+/* 焦点时隐藏 placeholder */
+#searchInput:focus::placeholder {
+    opacity: 0;
 }
 
 .clear-search-btn {
@@ -843,16 +867,18 @@ body {
 
 /* TDesign 风格过滤器标签 */
 .filter-label {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--vscode-descriptionForeground);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     min-width: 70px;
     flex-shrink: 0;
+    padding: 6px 0;
+    line-height: 20px;
 }
 
 .filter-label 
@@ -875,6 +901,27 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+}
+
+/* 统一图标大小和对齐 */
+.filter-btn .codicon,
+.view-btn .codicon,
+.type-btn .codicon {
+    font-size: 14px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+/* 统一文本对齐 */
+.filter-btn > span:not(.codicon),
+.view-btn > span:not(.codicon),
+.type-btn > span:not(.codicon) {
+    line-height: 1.4;
+    vertical-align: middle;
 }
 
 .filter-btn:hover, .view-btn:hover, .type-btn:hover {
@@ -965,15 +1012,10 @@ body {
     color: var(--vscode-button-foreground);
     font-weight: 600;
     opacity: 1;
-    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2);
 }
 
-.tag-chip.selected::before {
-    content: "✓";
-    font-size: 12px;
-    font-weight: 700;
-    margin-right: 2px;
-}
+.tag-chip.selected::before { content: none; }
 
 .tag-chip.selected:hover {
     background-color: var(--vscode-button-hoverBackground);
@@ -997,10 +1039,44 @@ body {
     overflow-x: hidden;
 }
 
+/* 工作区列表网格布局 - 一行两个卡片 */
+#workspaceList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+    gap: 12px;
+}
+
+@media (max-width: 1200px) {
+    #workspaceList {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 工作区分组标题 */
+.workspace-section-header {
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--vscode-sideBarTitle-foreground);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.4;
+}
+
+.workspace-section-header .codicon {
+    font-size: 14px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+}
+
 /* TDesign 风格项目卡片 */
 .workspace-item {
     padding: var(--item-padding);
-    margin-bottom: 10px;
+    margin-bottom: 0;
     border: 1px solid var(--vscode-sideBar-border);
     border-radius: 6px;
     background: var(--vscode-sideBarSectionHeader-background);
@@ -1041,6 +1117,7 @@ body {
     align-items: center;
     gap: 8px;
     font-size: 14px;
+    line-height: 20px;
 }
 
 /* TDesign 风格项目类型标签 */
@@ -1051,18 +1128,24 @@ body {
     border-radius: 3px;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 5px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     transition: all 0.2s cubic-bezier(0.38, 0, 0.24, 1);
-    border: 1px solid;
+    border: none;
     background: transparent;
+    line-height: 1;
+    flex-shrink: 0;
 }
 
 .workspace-type::before {
     font-size: 14px;
     font-weight: 400;
     line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* TDesign 风格操作按钮组 */
@@ -1083,7 +1166,7 @@ body {
 .action-btn {
     width: 28px;
     height: 28px;
-    border: 1px solid transparent;
+    border: none;
     border-radius: 4px;
     background-color: transparent;
     color: var(--vscode-icon-foreground);
@@ -1098,7 +1181,6 @@ body {
 
 .action-btn:hover {
     background-color: var(--vscode-toolbar-hoverBackground);
-    border-color: var(--vscode-input-border);
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -1107,7 +1189,7 @@ body {
 .action-btn.open-btn {
     background: transparent;
     color: var(--vscode-textLink-foreground);
-    border: 1px solid var(--vscode-input-border);
+    border: none;
     margin-right: 6px;
     position: relative;
     font-weight: 500;
@@ -1117,7 +1199,6 @@ body {
 
 .action-btn.open-btn:hover {
     background: var(--vscode-list-hoverBackground);
-    border-color: var(--vscode-textLink-foreground);
     color: var(--vscode-textLink-activeForeground);
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -1174,13 +1255,41 @@ body {
 
 .workspace-location {
     font-size: 10px;
-    padding: 3px 6px;
+    padding: 4px 8px;
     border-radius: 8px;
     background-color: var(--vscode-badge-background);
     color: var(--vscode-badge-foreground);
     font-weight: 500;
     border: 1px solid var(--vscode-badge-background);
     transition: all var(--transition-duration);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    line-height: 1;
+    vertical-align: middle;
+    height: 20px;
+}
+
+/* 统一 location 图标大小和对齐 */
+.workspace-location .codicon,
+.workspace-location > .codicon {
+    font-size: 13px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0;
+}
+
+/* 确保 emoji fallback 也对齐 */
+.workspace-location .codicon::after {
+    line-height: 1;
+    vertical-align: middle;
+    display: inline-flex;
+    align-items: center;
 }
 
 .workspace-location:hover {

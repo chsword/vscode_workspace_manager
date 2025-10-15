@@ -324,7 +324,7 @@
 
         // Render pinned workspaces (if any and not in pinned-only view)
         if (pinnedWorkspaces.length > 0 && currentFilter.view !== 'pinned') {
-            html += `<div style="font-size: 12px; font-weight: 500; margin-bottom: 8px; color: var(--vscode-sideBarTitle-foreground); display: flex; align-items: center; gap: 6px;"><span class="codicon codicon-bookmark" data-emoji="📌"></span> 已固定</div>`;
+            html += `<div class="workspace-section-header"><span class="codicon codicon-bookmark" data-emoji="📌"></span> 已固定</div>`;
             pinnedWorkspaces.forEach(workspace => {
                 html += renderWorkspaceItem(workspace);
             });
@@ -334,7 +334,22 @@
         if (otherWorkspaces.length > 0 || currentFilter.view === 'pinned') {
             const workspacesToShow = currentFilter.view === 'pinned' ? pinnedWorkspaces : otherWorkspaces;
             if (workspacesToShow.length > 0) {
-                html += `<div style="font-size: 12px; font-weight: 500; margin-bottom: 8px; ${pinnedWorkspaces.length > 0 && currentFilter.view !== 'pinned' ? 'margin-top: 16px;' : ''} color: var(--vscode-sideBarTitle-foreground); display: flex; align-items: center; gap: 6px;">${headerIcon} ${headerText}</div>`;
+                // 如果已经显示了固定工作区分组,则修改标题为"其他工作区"
+                let sectionHeader = headerText;
+                let sectionIcon = headerIcon;
+                if (pinnedWorkspaces.length > 0 && currentFilter.view !== 'pinned' && headerText === '全部工作区') {
+                    sectionHeader = '其他工作区';
+                    sectionIcon = '<span class="codicon codicon-folder" data-emoji="📁"></span>';
+                }
+                // 只在需要标题时显示(不是默认的"全部工作区"或有其他筛选条件时)
+                const shouldShowHeader = pinnedWorkspaces.length > 0 || 
+                                        currentFilter.view !== 'all' || 
+                                        currentFilter.searchText || 
+                                        (currentFilter.location && currentFilter.location !== 'all') ||
+                                        (currentFilter.tags && currentFilter.tags.length > 0);
+                if (shouldShowHeader) {
+                    html += `<div class="workspace-section-header" style="${pinnedWorkspaces.length > 0 && currentFilter.view !== 'pinned' ? 'margin-top: 16px;' : ''}">${sectionIcon} ${sectionHeader}</div>`;
+                }
                 workspacesToShow.forEach(workspace => {
                     html += renderWorkspaceItem(workspace);
                 });

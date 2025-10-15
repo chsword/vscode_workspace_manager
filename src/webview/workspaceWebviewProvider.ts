@@ -213,6 +213,7 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
     // Get URIs for resources
     const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'main.js'));
     const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'main.css'));
+    const logoUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'logo.svg'));
     // Use official codicon.css so the font is resolved via its relative URL
     const codiconCssUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'node_modules', '@vscode', 'codicons', 'dist', 'codicon.css'));
     // Also prepare a direct font URL as a fallback (some webview envs resolve relative URLs differently)
@@ -226,7 +227,7 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; script-src ${webview.cspSource};">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; img-src ${webview.cspSource} data:; script-src ${webview.cspSource};">
     <link href="${codiconCssUri}" rel="stylesheet">
     <style>
         /* Fallback to ensure codicon font is available */
@@ -242,6 +243,10 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
 <body>
     <div id="app">
         <div class="header">
+            <div class="brand">
+                <img src="${logoUri}" class="app-logo" alt="Workspace Manager Logo" />
+                <span class="brand-name">Workspace Manager</span>
+            </div>
             <div class="search-container">
                 <div class="search-input-wrapper">
                     <span class="codicon codicon-search search-icon" data-emoji="🔍"></span>
