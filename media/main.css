@@ -7,6 +7,41 @@
     --transition-duration: 0.3s;
 }
 
+/* TDesign Icons 基础样式 */
+.t-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* 旋转动画 */
+.rotating {
+    animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 搜索图标定位 */
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--vscode-input-foreground);
+    opacity: 0.6;
+    pointer-events: none;
+    font-size: 14px;
+}
+
 /* Reset and Base Styles */
 * {
     box-sizing: border-box;
@@ -54,8 +89,7 @@ body {
 
 #searchInput {
     width: 100%;
-    padding: 8px 16px;
-    padding-right: 36px;
+    padding: 8px 36px 8px 36px;
     border: 1px solid var(--vscode-input-border);
     border-radius: 20px;
     background-color: var(--vscode-input-background);
@@ -103,33 +137,35 @@ body {
 
 .actions {
     display: flex;
-    gap: 4px;
+    gap: 6px;
 }
 
+/* TDesign 风格图标按钮 */
 .icon-button {
     width: 32px;
     height: 32px;
-    border: none;
-    border-radius: 8px;
+    border: 1px solid transparent;
+    border-radius: 4px;
     background-color: transparent;
     color: var(--vscode-icon-foreground);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all var(--transition-duration);
+    transition: all 0.2s cubic-bezier(0.38, 0, 0.24, 1);
     position: relative;
-    overflow: hidden;
 }
 
 .icon-button:hover {
     background-color: var(--vscode-toolbar-hoverBackground);
-    transform: scale(1.05);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    border-color: var(--vscode-input-border);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .icon-button:active {
-    transform: scale(0.95);
+    transform: translateY(0);
+    box-shadow: none;
 }
 
 .icon-button:disabled {
@@ -191,7 +227,7 @@ body {
 .view-filters::before,
 .type-filters::before {
     content: attr(data-label);
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--vscode-descriptionForeground);
     text-transform: uppercase;
@@ -202,34 +238,39 @@ body {
     flex-shrink: 0;
 }
 
+/* TDesign 风格过滤按钮 */
 .filter-btn, .view-btn, .type-btn {
-    padding: 7px 14px;
+    padding: 5px 12px;
     border: 1px solid var(--vscode-input-border);
-    border-radius: 16px;
+    border-radius: 3px;
     background-color: var(--vscode-input-background);
-    color: var(--vscode-input-foreground);
+    color: var(--vscode-foreground);
     cursor: pointer;
     font-size: 12px;
     font-weight: 500;
-    transition: all var(--transition-duration);
+    transition: all 0.2s cubic-bezier(0.38, 0, 0.24, 1);
     position: relative;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     letter-spacing: 0.3px;
+    line-height: 20px;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .filter-btn:hover, .view-btn:hover, .type-btn:hover {
     background-color: var(--vscode-list-hoverBackground);
     border-color: var(--vscode-textLink-foreground);
     transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* TDesign 风格激活状态 - 提升对比度 */
 .filter-btn.active, .view-btn.active, .type-btn.active {
     background: var(--vscode-button-background);
     color: var(--vscode-button-foreground);
     border-color: var(--vscode-button-background);
-    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2), 0 2px 8px rgba(0, 122, 255, 0.25);
     transform: translateY(-1px);
     font-weight: 600;
 }
@@ -238,7 +279,7 @@ body {
     display: none;
 }
 
-/* Tag Filters - 增强清晰度 */
+/* Tag Filters - TDesign 风格设计 */
 .tag-filters {
     padding: 12px var(--container-padding);
     border-bottom: 1px solid var(--vscode-sideBar-border);
@@ -246,20 +287,19 @@ body {
 }
 
 .tag-filters-header {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--vscode-descriptionForeground);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
     gap: 6px;
 }
 
-.tag-filters-header::before {
-    content: "🏷️";
-    font-size: 12px;
+.tag-filters-header .t-icon {
+    font-size: 14px;
 }
 
 .tag-container {
@@ -269,58 +309,70 @@ body {
     margin-top: 8px;
 }
 
+/* TDesign 风格标签 - 轻量简洁 */
 .tag-chip {
-    padding: 7px 12px;
-    border-radius: 16px;
+    padding: 5px 12px;
+    border-radius: 3px;
     font-size: 12px;
+    font-weight: 500;
     cursor: pointer;
-    border: 2px solid;
-    transition: all var(--transition-duration);
+    border: 1px solid;
+    transition: all 0.2s cubic-bezier(0.38, 0, 0.24, 1);
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     position: relative;
-    min-width: fit-content;
     white-space: nowrap;
-    font-weight: 600;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     letter-spacing: 0.3px;
+    line-height: 20px;
+    user-select: none;
 }
 
-.tag-chip:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* 未选中状态 - 更清晰的边框 */
+/* 未选中状态 - TDesign 默认 */
 .tag-chip:not(.selected) {
-    border-color: currentColor;
     background-color: var(--vscode-input-background);
-    opacity: 0.75;
+    border-color: var(--vscode-input-border);
+    color: var(--vscode-foreground);
+    opacity: 0.85;
 }
 
-/* 选中状态 - 明显的视觉反馈 */
-.tag-chip.selected {
+.tag-chip:not(.selected):hover {
+    background-color: var(--vscode-list-hoverBackground);
+    border-color: var(--vscode-textLink-foreground);
     opacity: 1;
-    font-weight: 700;
     transform: translateY(-1px);
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
-    border-width: 2.5px;
-    background-color: currentColor !important;
-    color: var(--vscode-button-foreground) !important;
-    padding-left: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 选中状态 - TDesign 品牌色 */
+.tag-chip.selected {
+    background-color: var(--vscode-button-background);
+    border-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    font-weight: 600;
+    opacity: 1;
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
 }
 
 .tag-chip.selected::before {
     content: "✓";
-    font-size: 11px;
-    opacity: 1;
-    font-weight: bold;
+    font-size: 12px;
+    font-weight: 700;
+    margin-right: 2px;
 }
 
 .tag-chip.selected:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+    background-color: var(--vscode-button-hoverBackground);
+    border-color: var(--vscode-button-hoverBackground);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(0, 122, 255, 0.3);
+}
+
+/* 标签文本 */
+.tag-chip .tag-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 /* Content Area */
@@ -331,25 +383,24 @@ body {
     overflow-x: hidden;
 }
 
-/* Workspace Item Styles */
+/* TDesign 风格项目卡片 */
 .workspace-item {
     padding: var(--item-padding);
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     border: 1px solid var(--vscode-sideBar-border);
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--vscode-sideBarSectionHeader-background) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border-radius: 6px;
+    background: var(--vscode-sideBarSectionHeader-background);
     cursor: pointer;
-    transition: all var(--transition-duration);
+    transition: all 0.2s cubic-bezier(0.38, 0, 0.24, 1);
     position: relative;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    backdrop-filter: blur(10px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .workspace-item:hover {
-    background: linear-gradient(135deg, var(--vscode-list-hoverBackground) 0%, rgba(255, 255, 255, 0.05) 100%);
-    border-color: var(--vscode-list-focusOutline);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    background: var(--vscode-list-hoverBackground);
+    border-color: var(--vscode-textLink-foreground);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .workspace-item.pinned {
@@ -378,47 +429,48 @@ body {
     font-size: 14px;
 }
 
+/* TDesign 风格项目类型标签 */
 .workspace-type {
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 600;
-    padding: 4px 8px;
-    border-radius: 12px;
+    padding: 4px 10px;
+    border-radius: 3px;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
-    transition: all var(--transition-duration);
+    letter-spacing: 0.5px;
+    transition: all 0.2s cubic-bezier(0.38, 0, 0.24, 1);
     border: 1px solid;
     background: transparent;
 }
 
 .workspace-type::before {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 400;
+    line-height: 1;
 }
 
+/* TDesign 风格操作按钮组 */
 .workspace-actions {
     display: flex;
-    gap: 6px;
-    opacity: 0.8;
-    transition: all var(--transition-duration);
-    background: rgba(0, 0, 0, 0.02);
-    padding: 4px;
-    border-radius: 8px;
-    backdrop-filter: blur(5px);
+    gap: 4px;
+    align-items: center;
+    opacity: 0;
+    transition: all 0.2s cubic-bezier(0.38, 0, 0.24, 1);
+    padding: 2px;
 }
 
 .workspace-item:hover .workspace-actions {
     opacity: 1;
-    background: rgba(0, 0, 0, 0.05);
 }
 
+/* TDesign 风格操作按钮 */
 .action-btn {
     width: 28px;
     height: 28px;
-    border: none;
-    border-radius: 6px;
+    border: 1px solid transparent;
+    border-radius: 4px;
     background-color: transparent;
     color: var(--vscode-icon-foreground);
     cursor: pointer;
@@ -426,49 +478,40 @@ body {
     align-items: center;
     justify-content: center;
     font-size: 14px;
-    transition: all var(--transition-duration);
+    transition: all 0.2s cubic-bezier(0.38, 0, 0.24, 1);
     position: relative;
-    overflow: hidden;
 }
 
 .action-btn:hover {
     background-color: var(--vscode-toolbar-hoverBackground);
-    transform: translateY(-1px) scale(1.08);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-    border-radius: 8px;
+    border-color: var(--vscode-input-border);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* TDesign 风格打开按钮 */
 .action-btn.open-btn {
     background: transparent;
     color: var(--vscode-textLink-foreground);
     border: 1px solid var(--vscode-input-border);
-    margin-right: 8px;
-    box-shadow: none;
+    margin-right: 6px;
     position: relative;
-    overflow: hidden;
-    font-weight: 400;
+    font-weight: 500;
     min-width: 28px;
     height: 28px;
-    opacity: 0.7;
-    transition: all var(--transition-duration);
-}
-
-.action-btn.open-btn::before {
-    display: none;
 }
 
 .action-btn.open-btn:hover {
-    background: var(--vscode-button-secondaryHoverBackground);
+    background: var(--vscode-list-hoverBackground);
     border-color: var(--vscode-textLink-foreground);
     color: var(--vscode-textLink-activeForeground);
-    opacity: 1;
-    transform: translateY(-1px) scale(1.05);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .action-btn.open-btn:active {
     background: var(--vscode-button-secondaryBackground);
-    transform: translateY(0) scale(0.98);
+    transform: translateY(0);
     box-shadow: none;
 }
 

@@ -209,72 +209,117 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
         // Get URIs for resources
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'main.js'));
         const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'main.css'));
+        
+        // Get TDesign icons CSS from node_modules
+        const tdesignIconsUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionUri, 'node_modules', 'tdesign-icons-vue', 'lib', 'index.css')
+        );
 
         return `<!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="${tdesignIconsUri}" rel="stylesheet">
     <link href="${styleUri}" rel="stylesheet">
-    <title>Workspace Manager</title>
+    <title>工作区管理器</title>
 </head>
 <body>
     <div id="app">
         <div class="header">
             <div class="search-container">
                 <div class="search-input-wrapper">
-                    <input type="text" id="searchInput" placeholder="🔍 Search workspaces..." />
-                    <button id="clearSearchBtn" class="clear-search-btn" style="display: none;" title="Clear search">✕</button>
+                    <i class="t-icon t-icon-search search-icon"></i>
+                    <input type="text" id="searchInput" placeholder="搜索工作区..." />
+                    <button id="clearSearchBtn" class="clear-search-btn" style="display: none;" title="清除搜索">
+                        <i class="t-icon t-icon-close"></i>
+                    </button>
                 </div>
             </div>
             <div class="actions">
-                <button id="syncBtn" class="icon-button" title="Sync VS Code History">
-                    <span class="codicon codicon-sync"></span>
+                <button id="syncBtn" class="icon-button" title="同步 VS Code 历史记录">
+                    <i class="t-icon t-icon-refresh"></i>
                 </button>
-                <button id="refreshBtn" class="icon-button" title="Refresh">
-                    <span class="codicon codicon-refresh"></span>
+                <button id="refreshBtn" class="icon-button" title="刷新">
+                    <i class="t-icon t-icon-rollback"></i>
                 </button>
-                <button id="autoSyncBtn" class="icon-button" title="Toggle Auto Sync">
-                    <span class="codicon codicon-sync-ignored"></span>
+                <button id="autoSyncBtn" class="icon-button" title="切换自动同步">
+                    <i class="t-icon t-icon-swap"></i>
                 </button>
-                <button id="settingsBtn" class="icon-button" title="Settings">
-                    <span class="codicon codicon-gear"></span>
+                <button id="settingsBtn" class="icon-button" title="设置">
+                    <i class="t-icon t-icon-setting"></i>
                 </button>
             </div>
         </div>
 
         <div class="filters">
             <div class="location-filters" data-label="📍 位置:">
-                <button class="filter-btn active" data-location="all">All</button>
-                <button class="filter-btn" data-location="local">� Local</button>
-                <button class="filter-btn" data-location="wsl">🐧 WSL</button>
-                <button class="filter-btn" data-location="remote">🌐 Remote</button>
+                <button class="filter-btn active" data-location="all">
+                    <i class="t-icon t-icon-view-list"></i>
+                    <span>全部</span>
+                </button>
+                <button class="filter-btn" data-location="local">
+                    <i class="t-icon t-icon-laptop"></i>
+                    <span>本地</span>
+                </button>
+                <button class="filter-btn" data-location="wsl">
+                    <i class="t-icon t-icon-server"></i>
+                    <span>WSL</span>
+                </button>
+                <button class="filter-btn" data-location="remote">
+                    <i class="t-icon t-icon-internet"></i>
+                    <span>远程</span>
+                </button>
             </div>
 
             <div class="type-filters" data-label="📂 类型:">
-                <button class="type-btn active" data-type="all">All Types</button>
-                <button class="type-btn" data-type="workspace">📋 Workspace</button>
-                <button class="type-btn" data-type="folder">📁 Folder</button>
+                <button class="type-btn active" data-type="all">
+                    <i class="t-icon t-icon-view-module"></i>
+                    <span>全部类型</span>
+                </button>
+                <button class="type-btn" data-type="workspace">
+                    <i class="t-icon t-icon-folder-open"></i>
+                    <span>工作区</span>
+                </button>
+                <button class="type-btn" data-type="folder">
+                    <i class="t-icon t-icon-folder"></i>
+                    <span>文件夹</span>
+                </button>
             </div>
 
             <div class="view-filters" data-label="👁️ 视图:">
-                <button class="view-btn active" data-view="all">All</button>
-                <button class="view-btn" data-view="recent">📋 Recent</button>
-                <button class="view-btn" data-view="favorites">⭐ Favorites</button>
-                <button class="view-btn" data-view="pinned">📌 Pinned</button>
+                <button class="view-btn active" data-view="all">
+                    <i class="t-icon t-icon-view-list"></i>
+                    <span>全部</span>
+                </button>
+                <button class="view-btn" data-view="recent">
+                    <i class="t-icon t-icon-time"></i>
+                    <span>最近</span>
+                </button>
+                <button class="view-btn" data-view="favorites">
+                    <i class="t-icon t-icon-star-filled"></i>
+                    <span>收藏</span>
+                </button>
+                <button class="view-btn" data-view="pinned">
+                    <i class="t-icon t-icon-pin-filled"></i>
+                    <span>固定</span>
+                </button>
             </div>
         </div>
 
         <div class="tag-filters">
-            <div class="tag-filters-header">TAGS</div>
+            <div class="tag-filters-header">
+                <i class="t-icon t-icon-discount"></i>
+                <span>标签</span>
+            </div>
             <div id="tagFilters"></div>
         </div>
 
         <div class="content">
             <div id="workspaceList">
                 <div class="loading">
-                    <span class="codicon codicon-loading"></span>
-                    Loading workspaces...
+                    <i class="t-icon t-icon-loading rotating"></i>
+                    <span>加载工作区中...</span>
                 </div>
             </div>
         </div>

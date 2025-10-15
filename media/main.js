@@ -74,13 +74,13 @@
 
         // Sync button
         syncBtn.addEventListener('click', () => {
-            syncBtn.querySelector('.codicon').classList.add('codicon-loading');
+            syncBtn.querySelector('.t-icon').classList.add('rotating');
             syncBtn.disabled = true;
             vscode.postMessage({ type: 'syncWorkspaces' });
             
             // Reset button state after a delay
             setTimeout(() => {
-                syncBtn.querySelector('.codicon').classList.remove('codicon-loading');
+                syncBtn.querySelector('.t-icon').classList.remove('rotating');
                 syncBtn.disabled = false;
             }, 2000);
         });
@@ -172,18 +172,18 @@
     // Update auto sync button state
     function updateAutoSyncButton(isEnabled) {
         if (autoSyncBtn) {
-            const icon = autoSyncBtn.querySelector('.codicon');
+            const icon = autoSyncBtn.querySelector('.t-icon');
             if (icon) {
                 if (isEnabled) {
-                    icon.className = 'codicon codicon-loading';
+                    icon.classList.add('rotating');
                     autoSyncBtn.classList.remove('disabled');
                     autoSyncBtn.classList.add('active');
-                    autoSyncBtn.title = 'Auto Sync Enabled - Click to disable';
+                    autoSyncBtn.title = '自动同步已启用 - 点击禁用';
                 } else {
-                    icon.className = 'codicon codicon-sync';
+                    icon.classList.remove('rotating');
                     autoSyncBtn.classList.remove('active');
                     autoSyncBtn.classList.add('disabled');
-                    autoSyncBtn.title = 'Auto Sync Disabled - Click to enable';
+                    autoSyncBtn.title = '自动同步已禁用 - 点击启用';
                 }
             }
         }
@@ -212,10 +212,16 @@
         sortedTags.forEach(tag => {
             const isSelected = currentFilter.tags.includes(tag.name);
             const tagIcon = tag.isSystem ? '🔖' : '🏷️';
+            // 增强未选中标签的对比度
+            const bgOpacity = isSelected ? '' : '20';
+            const style = isSelected 
+                ? '' // 选中时使用 CSS 类样式
+                : `background-color: ${tag.color}${bgOpacity}; color: ${tag.color}; border-color: ${tag.color};`;
+            
             html += `
                 <span class="tag-chip ${isSelected ? 'selected' : ''}" 
                       data-tag="${tag.name}" 
-                      style="background-color: ${tag.color}15; color: ${tag.color}; border-color: ${tag.color};"
+                      style="${style}"
                       title="${tag.description || tag.name}${tag.isSystem ? ' (System)' : ''}">
                     <span class="tag-text">${tagIcon} ${tag.name}${tag.usageCount > 0 ? ` (${tag.usageCount})` : ''}</span>
                 </span>
@@ -263,10 +269,10 @@
         if (!currentWorkspaces.length) {
             workspaceList.innerHTML = `
                 <div class="empty-state">
-                    <div class="codicon codicon-folder"></div>
-                    <div>No workspaces found</div>
+                    <i class="t-icon t-icon-folder" style="font-size: 48px; opacity: 0.5;"></i>
+                    <div>未找到工作区</div>
                     <div style="font-size: 11px; margin-top: 8px; opacity: 0.7;">
-                        ${currentFilter.searchText ? 'Try adjusting your search terms' : 'Open some folders or workspaces in VS Code to see them here'}
+                        ${currentFilter.searchText ? '尝试调整搜索词' : '在 VS Code 中打开一些文件夹或工作区以查看它们'}
                     </div>
                 </div>
             `;
@@ -282,25 +288,25 @@
         // Generate dynamic header based on current filter
         let headerText = '';
         if (currentFilter.view === 'favorites') {
-            headerText = '⭐ Favorites';
+            headerText = '⭐ 收藏夹';
         } else if (currentFilter.view === 'pinned') {
-            headerText = '📌 Pinned';
+            headerText = '📌 已固定';
         } else if (currentFilter.view === 'recent') {
-            headerText = '📋 Recent';
+            headerText = '⏱️ 最近使用';
         } else if (currentFilter.searchText) {
-            headerText = `🔍 Search results for "${currentFilter.searchText}"`;
+            headerText = `🔍 搜索 "${currentFilter.searchText}" 的结果`;
         } else if (currentFilter.location && currentFilter.location !== 'all') {
-            const locationNames = { local: '💻 Local', wsl: '🐧 WSL', remote: '🌐 Remote' };
-            headerText = locationNames[currentFilter.location] || '📁 Workspaces';
+            const locationNames = { local: '💻 本地', wsl: '🐧 WSL', remote: '🌐 远程' };
+            headerText = locationNames[currentFilter.location] || '📁 工作区';
         } else if (currentFilter.tags && currentFilter.tags.length > 0) {
-            headerText = `🏷️ Tagged: ${currentFilter.tags.join(', ')}`;
+            headerText = `🏷️ 标签: ${currentFilter.tags.join(', ')}`;
         } else {
-            headerText = '📁 All Workspaces';
+            headerText = '📁 全部工作区';
         }
 
         // Render pinned workspaces (if any and not in pinned-only view)
         if (pinnedWorkspaces.length > 0 && currentFilter.view !== 'pinned') {
-            html += `<div style="font-size: 12px; font-weight: 500; margin-bottom: 8px; color: var(--vscode-sideBarTitle-foreground);">📌 Pinned</div>`;
+            html += `<div style="font-size: 12px; font-weight: 500; margin-bottom: 8px; color: var(--vscode-sideBarTitle-foreground);">📌 已固定</div>`;
             pinnedWorkspaces.forEach(workspace => {
                 html += renderWorkspaceItem(workspace);
             });
@@ -451,25 +457,25 @@
                     </div>
                     <div class="workspace-actions">
                         <button class="action-btn open-btn" data-action="openWorkspace" 
-                                title="Open workspace">
-                            <span class="codicon codicon-folder-opened"></span>
+                                title="打开工作区">
+                            <i class="t-icon t-icon-folder-open"></i>
                         </button>
                         <button class="action-btn" data-action="${workspace.isFavorite ? 'removeFromFavorites' : 'addToFavorites'}" 
-                                title="${workspace.isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
-                            <span class="codicon codicon-star${workspace.isFavorite ? '-full' : '-empty'}"></span>
+                                title="${workspace.isFavorite ? '取消收藏' : '添加到收藏'}">
+                            <i class="t-icon t-icon-star${workspace.isFavorite ? '-filled' : ''}"></i>
                         </button>
                         <button class="action-btn" data-action="${workspace.isPinned ? 'unpinWorkspace' : 'pinWorkspace'}" 
-                                title="${workspace.isPinned ? 'Unpin' : 'Pin to top'}">
-                            <span class="codicon codicon-pin${workspace.isPinned ? '' : ''}"></span>
+                                title="${workspace.isPinned ? '取消固定' : '固定到顶部'}">
+                            <i class="t-icon t-icon-pin${workspace.isPinned ? '-filled' : ''}"></i>
                         </button>
-                        <button class="action-btn" data-action="editTags" title="Edit tags">
-                            <span class="codicon codicon-tag"></span>
+                        <button class="action-btn" data-action="editTags" title="编辑标签">
+                            <i class="t-icon t-icon-discount"></i>
                         </button>
-                        <button class="action-btn" data-action="editDescription" title="Edit description">
-                            <span class="codicon codicon-edit"></span>
+                        <button class="action-btn" data-action="editDescription" title="编辑描述">
+                            <i class="t-icon t-icon-edit"></i>
                         </button>
-                        <button class="action-btn" data-action="removeWorkspace" title="Remove from list">
-                            <span class="codicon codicon-trash"></span>
+                        <button class="action-btn" data-action="removeWorkspace" title="从列表中移除">
+                            <i class="t-icon t-icon-delete"></i>
                         </button>
                     </div>
                 </div>
@@ -582,10 +588,10 @@
         }).length;
 
         stats.innerHTML = `
-            Total: ${totalWorkspaces} • 
-            Recent: ${recentWorkspaces} • 
-            Favorites: ${favoriteWorkspaces} • 
-            Pinned: ${pinnedWorkspaces}
+            总计: ${totalWorkspaces} • 
+            最近: ${recentWorkspaces} • 
+            收藏: ${favoriteWorkspaces} • 
+            固定: ${pinnedWorkspaces}
         `;
     }
 
