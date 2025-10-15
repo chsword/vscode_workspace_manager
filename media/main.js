@@ -142,11 +142,17 @@
         window.addEventListener('message', event => {
             const message = event.data;
             
+            console.log('📨 Received message:', message.type, message); // Debug log
+            
             switch (message.type) {
                 case 'updateWorkspaces':
                     currentWorkspaces = message.workspaces || [];
+                    console.log('📊 Updated workspaces:', currentWorkspaces.length, 'workspaces'); // Debug log
+                    console.log('📋 Workspace data:', currentWorkspaces); // Debug log
+                    
                     if (message.tags) {
                         currentTags = message.tags;
+                        console.log('🏷️ Updated tags:', currentTags.length, 'tags'); // Debug log
                         renderTagFilters();
                     }
                     // Update auto sync button state
@@ -271,7 +277,11 @@
 
     // Render workspaces
     function renderWorkspaces() {
+        console.log('🎨 Rendering workspaces:', currentWorkspaces.length, 'total'); // Debug log
+        console.log('🔍 Current filter:', currentFilter); // Debug log
+        
         if (!currentWorkspaces.length) {
+            console.log('⚠️ No workspaces to display'); // Debug log
             workspaceList.innerHTML = `
                 <div class="empty-state">
                     <span class="codicon codicon-folder" data-emoji="📁" style="font-size: 48px; opacity: 0.5;"></span>
@@ -283,6 +293,8 @@
             `;
             return;
         }
+
+        console.log('✅ Workspaces found, rendering...'); // Debug log
 
         // Group workspaces
         const pinnedWorkspaces = currentWorkspaces.filter(w => w.isPinned);

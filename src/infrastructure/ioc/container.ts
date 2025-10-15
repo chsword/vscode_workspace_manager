@@ -20,6 +20,14 @@ import {
   SyncWorkspacesUseCase
 } from '@core/application/use-cases';
 
+// Domain Services
+import { IWorkspacePathService } from '@core/domain/services/IWorkspacePathService';
+import { IWorkspaceDetectionService } from '@core/domain/services/IWorkspaceDetectionService';
+import { IWorkspaceValidationService } from '@core/domain/services/IWorkspaceValidationService';
+import { WorkspacePathService } from '@core/domain/services/impl/WorkspacePathService';
+import { WorkspaceDetectionService } from '@core/domain/services/impl/WorkspaceDetectionService';
+import { WorkspaceValidationService } from '@core/domain/services/impl/WorkspaceValidationService';
+
 /**
  * Configure the dependency injection container
  */
@@ -39,6 +47,11 @@ export function configureContainer(context: vscode.ExtensionContext): void {
 
   // Register Domain Repository Adapters
   container.registerSingleton<IWorkspaceDomainRepository>('IWorkspaceDomainRepository', WorkspaceDomainRepositoryAdapter);
+
+  // Register Domain Services
+  container.registerSingleton<IWorkspacePathService>('IWorkspacePathService', WorkspacePathService);
+  container.registerSingleton<IWorkspaceDetectionService>('IWorkspaceDetectionService', WorkspaceDetectionService);
+  container.registerSingleton<IWorkspaceValidationService>('IWorkspaceValidationService', WorkspaceValidationService);
 
   // Register Use Cases
   container.registerSingleton('GetWorkspacesUseCase', GetWorkspacesUseCase);

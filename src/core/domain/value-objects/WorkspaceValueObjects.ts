@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Workspace ID value object
- * Ensures valid UUID format
+ * Supports both UUID and Base64-encoded IDs for backward compatibility
  */
 export class WorkspaceId {
   private constructor(private readonly value: string) {}
@@ -16,9 +16,12 @@ export class WorkspaceId {
       );
     }
 
-    // Simple UUID validation (can be made more strict)
+    // Accept either UUID or Base64-encoded strings (for backward compatibility)
     const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidPattern.test(id)) {
+    const base64Pattern = /^[A-Za-z0-9+/]+=*$/;  // Base64 pattern
+    
+    if (!uuidPattern.test(id) && !base64Pattern.test(id)) {
+      console.error('Invalid ID error:', id);  // Debug log
       return Result.fail(
         new ValidationError('Invalid workspace ID format', { id })
       );
@@ -90,6 +93,7 @@ export class WorkspaceName {
 
   static create(name: string): Result<WorkspaceName, ValidationError> {
     if (!name || name.trim().length === 0) {
+      console.error('Empty name error:', name);  // Debug log
       return Result.fail(
         new ValidationError('Workspace name cannot be empty')
       );
