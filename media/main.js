@@ -31,6 +31,18 @@
 
     // Initialize
     function init() {
+        // Detect codicon font availability and set fallback class
+        try {
+            const codiconOk = (document.fonts && document.fonts.check) ? document.fonts.check('16px "codicon"') : true;
+            if (codiconOk) {
+                document.body.classList.add('codicon-loaded');
+            } else {
+                document.body.classList.add('codicon-fallback');
+            }
+        } catch (_) {
+            // If detection fails, prefer graceful fallback
+            document.body.classList.add('codicon-fallback');
+        }
         setupEventListeners();
         setupMessageHandling();
         

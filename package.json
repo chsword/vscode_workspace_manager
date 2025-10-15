@@ -211,8 +211,7 @@
     "@vscode/codicons": "^0.0.39",
     "chokidar": "^3.5.3",
     "sqlite3": "^5.1.7",
-    "tdesign-icons-view": "^0.1.9",
-    "tdesign-web-components": "^1.1.18",
+    
     "uuid": "^9.0.1"
   }
 }

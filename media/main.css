@@ -23,6 +23,50 @@
     vertical-align: middle;
 }
 
+/* 当 codicon 字体不可用时，回退为 emoji 图标显示 */
+/* 优先使用 data-emoji 作为内容 */
+body.codicon-fallback .codicon[data-emoji]:before {
+    content: attr(data-emoji) !important;
+    font-family: initial !important;
+}
+/* 无 data-emoji 时的兜底 */
+body.codicon-fallback .codicon:not([data-emoji]):before {
+    content: '📦' !important;
+    font-family: initial !important;
+}
+
+/* 在回退模式下，彻底隐藏原始 ::before 并用 ::after 绘制，避免任何未知字形渲染为 X */
+body.codicon-fallback .codicon::before {
+    content: '' !important;
+}
+body.codicon-fallback .codicon::after {
+    display: inline-block;
+    font-family: initial !important;
+}
+body.codicon-fallback .codicon[data-emoji]::after { content: attr(data-emoji) !important; }
+body.codicon-fallback .codicon:not([data-emoji])::after { content: '📦' !important; }
+/* 常用图标的具体回退映射（尽量覆盖页面中使用到的） */
+body.codicon-fallback .codicon.codicon-search:before { content: '🔍' !important; }
+body.codicon-fallback .codicon.codicon-sync:before { content: '🔁' !important; }
+body.codicon-fallback .codicon.codicon-refresh:before { content: '🔄' !important; }
+body.codicon-fallback .codicon.codicon-gear:before,
+body.codicon-fallback .codicon.codicon-settings-gear:before { content: '⚙️' !important; }
+body.codicon-fallback .codicon.codicon-folder:before { content: '📁' !important; }
+body.codicon-fallback .codicon.codicon-folder-opened:before { content: '📂' !important; }
+body.codicon-fallback .codicon.codicon-device-desktop:before { content: '🖥️' !important; }
+body.codicon-fallback .codicon.codicon-server:before { content: '🖧' !important; }
+body.codicon-fallback .codicon.codicon-globe:before { content: '🌐' !important; }
+body.codicon-fallback .codicon.codicon-list-unordered:before { content: '🗂️' !important; }
+body.codicon-fallback .codicon.codicon-list-tree:before { content: '🧾' !important; }
+body.codicon-fallback .codicon.codicon-watch:before { content: '⏰' !important; }
+body.codicon-fallback .codicon.codicon-star-full:before { content: '⭐' !important; }
+body.codicon-fallback .codicon.codicon-bookmark:before { content: '📌' !important; }
+body.codicon-fallback .codicon.codicon-symbol-snippet:before { content: '🏷️' !important; }
+body.codicon-fallback .codicon.codicon-edit:before { content: '✏️' !important; }
+body.codicon-fallback .codicon.codicon-delete:before { content: '🗑️' !important; }
+body.codicon-fallback .codicon.codicon-loading:before { content: '⏳' !important; }
+body.codicon-fallback .codicon.codicon-close:before { content: '✖️' !important; }
+
 /* Codicon 图标内容定义 - 完整列表 */
 .codicon-add:before { content: "\ea60" }
 .codicon-plus:before { content: "\ea60" }

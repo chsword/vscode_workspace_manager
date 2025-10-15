@@ -244,7 +244,7 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
         <div class="header">
             <div class="search-container">
                 <div class="search-input-wrapper">
-                    <span class="codicon codicon-search search-icon"></span>
+                    <span class="codicon codicon-search search-icon" data-emoji="🔍"></span>
                     <input type="text" id="searchInput" placeholder="搜索工作区..." />
                     <button id="clearSearchBtn" class="clear-search-btn" style="display: none;" title="清除搜索">
                         <span class="codicon codicon-close"></span>
@@ -253,16 +253,16 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
             </div>
             <div class="actions">
                 <button id="syncBtn" class="icon-button" title="同步 VS Code 历史记录">
-                    <span class="codicon codicon-sync"></span>
+                    <span class="codicon codicon-sync" data-emoji="🔁"></span>
                 </button>
                 <button id="refreshBtn" class="icon-button" title="刷新">
-                    <span class="codicon codicon-refresh"></span>
+                    <span class="codicon codicon-refresh" data-emoji="🔄"></span>
                 </button>
                 <button id="autoSyncBtn" class="icon-button" title="切换自动同步">
-                    <span class="codicon codicon-sync"></span>
+                    <span class="codicon codicon-sync" data-emoji="🔁"></span>
                 </button>
                 <button id="settingsBtn" class="icon-button" title="设置">
-                    <span class="codicon codicon-settings-gear"></span>
+                    <span class="codicon codicon-settings-gear" data-emoji="⚙️"></span>
                 </button>
             </div>
         </div>
@@ -274,19 +274,19 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
                     位置
                 </span>
                 <button class="filter-btn active" data-location="all">
-                    <span class="codicon codicon-list-unordered"></span>
+                    <span class="codicon codicon-list-unordered" data-emoji="🗂️"></span>
                     <span>全部</span>
                 </button>
                 <button class="filter-btn" data-location="local">
-                    <span class="codicon codicon-device-desktop"></span>
+                    <span class="codicon codicon-device-desktop" data-emoji="🖥️"></span>
                     <span>本地</span>
                 </button>
                 <button class="filter-btn" data-location="wsl">
-                    <span class="codicon codicon-server"></span>
+                    <span class="codicon codicon-server" data-emoji="🖧"></span>
                     <span>WSL</span>
                 </button>
                 <button class="filter-btn" data-location="remote">
-                    <span class="codicon codicon-globe"></span>
+                    <span class="codicon codicon-globe" data-emoji="🌐"></span>
                     <span>远程</span>
                 </button>
             </div>
@@ -297,11 +297,11 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
                     类型
                 </span>
                 <button class="type-btn active" data-type="all">
-                    <span class="codicon codicon-list-tree"></span>
+                    <span class="codicon codicon-list-tree" data-emoji="🧾"></span>
                     <span>全部类型</span>
                 </button>
                 <button class="type-btn" data-type="workspace">
-                    <span class="codicon codicon-folder-opened"></span>
+                    <span class="codicon codicon-folder-opened" data-emoji="📂"></span>
                     <span>工作区</span>
                 </button>
                 <button class="type-btn" data-type="folder">
@@ -312,7 +312,7 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
 
             <div class="view-filters">
                 <span class="filter-label">
-                    <span class="codicon codicon-list-unordered"></span>
+                    <span class="codicon codicon-list-unordered" data-emoji="🗂️"></span>
                     视图
                 </span>
                 <button class="view-btn active" data-view="all">
@@ -320,15 +320,15 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
                     <span>全部</span>
                 </button>
                 <button class="view-btn" data-view="recent">
-                    <span class="codicon codicon-watch"></span>
+                    <span class="codicon codicon-watch" data-emoji="⏰"></span>
                     <span>最近</span>
                 </button>
                 <button class="view-btn" data-view="favorites">
-                    <span class="codicon codicon-star-full"></span>
+                    <span class="codicon codicon-star-full" data-emoji="⭐"></span>
                     <span>收藏</span>
                 </button>
                 <button class="view-btn" data-view="pinned">
-                    <span class="codicon codicon-bookmark"></span>
+                    <span class="codicon codicon-bookmark" data-emoji="📌"></span>
                     <span>固定</span>
                 </button>
             </div>
@@ -336,7 +336,7 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
 
         <div class="tag-filters">
             <div class="tag-filters-header">
-                <span class="codicon codicon-symbol-snippet"></span>
+                <span class="codicon codicon-symbol-snippet" data-emoji="🏷️"></span>
                 <span>标签</span>
             </div>
             <div id="tagFilters"></div>
@@ -345,7 +345,7 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
         <div class="content">
             <div id="workspaceList">
                 <div class="loading">
-                    <span class="codicon codicon-loading rotating"></span>
+                    <span class="codicon codicon-loading rotating" data-emoji="⏳"></span>
                     <span>加载工作区中...</span>
                 </div>
             </div>
