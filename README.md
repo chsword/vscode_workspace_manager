@@ -190,6 +190,15 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📋 Release Notes
 
+### 0.0.6
+
+**TDesign Integration Update**
+- 🎨 Integrated TDesign icon library for modern UI
+- 🌐 Full Chinese localization
+- ✨ Enhanced visual design with TDesign components
+- 🔄 Smooth loading animations
+- 📦 Improved button and icon styling
+
 ### 0.0.1
 
 Initial release of Workspace Manager with the following features:
@@ -199,6 +208,21 @@ Initial release of Workspace Manager with the following features:
 - Location-based organization
 - Modern webview interface
 - SQLite database integration
+
+---
+
+## 🎨 UI Framework
+
+This extension uses [TDesign](https://tdesign.tencent.com/) icon library for a modern and consistent user interface:
+
+- **TDesign Icons**: Professional icon set with 1000+ icons
+- **Consistent Design**: Unified visual language throughout the interface
+- **Smooth Animations**: Polished loading and interaction animations
+- **Theme Support**: Adapts to VS Code dark and light themes
+
+For more details about TDesign integration, see:
+- [TDesign Integration Guide](./TDESIGN_INTEGRATION.md)
+- [TDesign Quick Start](./TDESIGN_QUICKSTART.md)
 
 ---
 

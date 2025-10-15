@@ -201,7 +201,7 @@
     // Render tag filters
     function renderTagFilters() {
         if (!currentTags.length) {
-            tagFilters.innerHTML = '<div style="font-size: 11px; color: var(--vscode-descriptionForeground); text-align: center; padding: 8px;">No tags available</div>';
+            tagFilters.innerHTML = '<div style="font-size: 11px; color: var(--vscode-descriptionForeground); text-align: center; padding: 8px;">暂无标签</div>';
             return;
         }
 
@@ -211,7 +211,9 @@
         let html = '<div class="tag-container">';
         sortedTags.forEach(tag => {
             const isSelected = currentFilter.tags.includes(tag.name);
-            const tagIcon = tag.isSystem ? '🔖' : '🏷️';
+            const tagIcon = tag.isSystem 
+                ? '<i class="t-icon t-icon-bookmark"></i>' 
+                : '<i class="t-icon t-icon-discount"></i>';
             // 增强未选中标签的对比度
             const bgOpacity = isSelected ? '' : '20';
             const style = isSelected 
@@ -287,26 +289,39 @@
 
         // Generate dynamic header based on current filter
         let headerText = '';
+        let headerIcon = '';
         if (currentFilter.view === 'favorites') {
-            headerText = '⭐ 收藏夹';
+            headerIcon = '<i class="t-icon t-icon-star-filled"></i>';
+            headerText = '收藏夹';
         } else if (currentFilter.view === 'pinned') {
-            headerText = '📌 已固定';
+            headerIcon = '<i class="t-icon t-icon-pin-filled"></i>';
+            headerText = '已固定';
         } else if (currentFilter.view === 'recent') {
-            headerText = '⏱️ 最近使用';
+            headerIcon = '<i class="t-icon t-icon-time"></i>';
+            headerText = '最近使用';
         } else if (currentFilter.searchText) {
-            headerText = `🔍 搜索 "${currentFilter.searchText}" 的结果`;
+            headerIcon = '<i class="t-icon t-icon-search"></i>';
+            headerText = `搜索 "${currentFilter.searchText}" 的结果`;
         } else if (currentFilter.location && currentFilter.location !== 'all') {
-            const locationNames = { local: '💻 本地', wsl: '🐧 WSL', remote: '🌐 远程' };
-            headerText = locationNames[currentFilter.location] || '📁 工作区';
+            const locationIcons = { 
+                local: '<i class="t-icon t-icon-laptop"></i>', 
+                wsl: '<i class="t-icon t-icon-server"></i>', 
+                remote: '<i class="t-icon t-icon-internet"></i>' 
+            };
+            const locationNames = { local: '本地', wsl: 'WSL', remote: '远程' };
+            headerIcon = locationIcons[currentFilter.location] || '<i class="t-icon t-icon-folder"></i>';
+            headerText = locationNames[currentFilter.location] || '工作区';
         } else if (currentFilter.tags && currentFilter.tags.length > 0) {
-            headerText = `🏷️ 标签: ${currentFilter.tags.join(', ')}`;
+            headerIcon = '<i class="t-icon t-icon-discount"></i>';
+            headerText = `标签: ${currentFilter.tags.join(', ')}`;
         } else {
-            headerText = '📁 全部工作区';
+            headerIcon = '<i class="t-icon t-icon-folder"></i>';
+            headerText = '全部工作区';
         }
 
         // Render pinned workspaces (if any and not in pinned-only view)
         if (pinnedWorkspaces.length > 0 && currentFilter.view !== 'pinned') {
-            html += `<div style="font-size: 12px; font-weight: 500; margin-bottom: 8px; color: var(--vscode-sideBarTitle-foreground);">📌 已固定</div>`;
+            html += `<div style="font-size: 12px; font-weight: 500; margin-bottom: 8px; color: var(--vscode-sideBarTitle-foreground); display: flex; align-items: center; gap: 6px;"><i class="t-icon t-icon-pin-filled"></i> 已固定</div>`;
             pinnedWorkspaces.forEach(workspace => {
                 html += renderWorkspaceItem(workspace);
             });
@@ -316,7 +331,7 @@
         if (otherWorkspaces.length > 0 || currentFilter.view === 'pinned') {
             const workspacesToShow = currentFilter.view === 'pinned' ? pinnedWorkspaces : otherWorkspaces;
             if (workspacesToShow.length > 0) {
-                html += `<div style="font-size: 12px; font-weight: 500; margin-bottom: 8px; ${pinnedWorkspaces.length > 0 && currentFilter.view !== 'pinned' ? 'margin-top: 16px;' : ''} color: var(--vscode-sideBarTitle-foreground);">${headerText}</div>`;
+                html += `<div style="font-size: 12px; font-weight: 500; margin-bottom: 8px; ${pinnedWorkspaces.length > 0 && currentFilter.view !== 'pinned' ? 'margin-top: 16px;' : ''} color: var(--vscode-sideBarTitle-foreground); display: flex; align-items: center; gap: 6px;">${headerIcon} ${headerText}</div>`;
                 workspacesToShow.forEach(workspace => {
                     html += renderWorkspaceItem(workspace);
                 });
@@ -510,15 +525,15 @@
         menu.style.top = event.pageY + 'px';
 
         const menuItems = [
-            { label: '🚀 Open in New Window', action: 'openInNewWindow' },
-            { label: '📂 Open in Current Window', action: 'openInCurrent' },
+            { label: '<i class="t-icon t-icon-jump"></i> 新窗口打开', action: 'openInNewWindow' },
+            { label: '<i class="t-icon t-icon-folder-open"></i> 当前窗口打开', action: 'openInCurrent' },
             { separator: true },
-            { label: `${workspace.isFavorite ? '★' : '☆'} ${workspace.isFavorite ? 'Remove from' : 'Add to'} Favorites`, action: workspace.isFavorite ? 'removeFromFavorites' : 'addToFavorites' },
-            { label: `📌 ${workspace.isPinned ? 'Unpin' : 'Pin to Top'}`, action: workspace.isPinned ? 'unpinWorkspace' : 'pinWorkspace' },
-            { label: '🏷️ Edit Tags', action: 'editTags' },
-            { label: '📝 Edit Description', action: 'editDescription' },
+            { label: `<i class="t-icon t-icon-star${workspace.isFavorite ? '-filled' : ''}"></i> ${workspace.isFavorite ? '取消收藏' : '添加到收藏'}`, action: workspace.isFavorite ? 'removeFromFavorites' : 'addToFavorites' },
+            { label: `<i class="t-icon t-icon-pin${workspace.isPinned ? '-filled' : ''}"></i> ${workspace.isPinned ? '取消固定' : '固定到顶部'}`, action: workspace.isPinned ? 'unpinWorkspace' : 'pinWorkspace' },
+            { label: '<i class="t-icon t-icon-discount"></i> 编辑标签', action: 'editTags' },
+            { label: '<i class="t-icon t-icon-edit"></i> 编辑描述', action: 'editDescription' },
             { separator: true },
-            { label: '🗑️ Remove from List', action: 'removeWorkspace' }
+            { label: '<i class="t-icon t-icon-delete"></i> 从列表中移除', action: 'removeWorkspace' }
         ];
 
         let menuHtml = '';
@@ -598,19 +613,19 @@
     // Utility functions
     function getLocationIcon(locationType) {
         const icons = {
-            'local': '💻',
-            'wsl': '🐧',
-            'remote': '🌐'
+            'local': '<i class="t-icon t-icon-laptop"></i>',
+            'wsl': '<i class="t-icon t-icon-server"></i>',
+            'remote': '<i class="t-icon t-icon-internet"></i>'
         };
-        return icons[locationType] || '📁';
+        return icons[locationType] || '<i class="t-icon t-icon-folder"></i>';
     }
 
     function getTypeIcon(type) {
         const icons = {
-            'workspace': '📂',
-            'folder': '📁'
+            'workspace': '<i class="t-icon t-icon-folder-open"></i>',
+            'folder': '<i class="t-icon t-icon-folder"></i>'
         };
-        return icons[type] || '📁';
+        return icons[type] || '<i class="t-icon t-icon-folder"></i>';
     }
 
     function formatLastOpened(dateString) {

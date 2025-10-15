@@ -209,18 +209,13 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
         // Get URIs for resources
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'main.js'));
         const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'main.css'));
-        
-        // Get TDesign icons CSS from node_modules
-        const tdesignIconsUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this.extensionUri, 'node_modules', 'tdesign-icons-vue', 'lib', 'index.css')
-        );
 
         return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="${tdesignIconsUri}" rel="stylesheet">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource};">
     <link href="${styleUri}" rel="stylesheet">
     <title>工作区管理器</title>
 </head>
@@ -253,7 +248,11 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
         </div>
 
         <div class="filters">
-            <div class="location-filters" data-label="📍 位置:">
+            <div class="location-filters">
+                <span class="filter-label">
+                    <i class="t-icon t-icon-location"></i>
+                    位置
+                </span>
                 <button class="filter-btn active" data-location="all">
                     <i class="t-icon t-icon-view-list"></i>
                     <span>全部</span>
@@ -272,7 +271,11 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
                 </button>
             </div>
 
-            <div class="type-filters" data-label="📂 类型:">
+            <div class="type-filters">
+                <span class="filter-label">
+                    <i class="t-icon t-icon-folder"></i>
+                    类型
+                </span>
                 <button class="type-btn active" data-type="all">
                     <i class="t-icon t-icon-view-module"></i>
                     <span>全部类型</span>
@@ -287,7 +290,11 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
                 </button>
             </div>
 
-            <div class="view-filters" data-label="👁️ 视图:">
+            <div class="view-filters">
+                <span class="filter-label">
+                    <i class="t-icon t-icon-view-list"></i>
+                    视图
+                </span>
                 <button class="view-btn active" data-view="all">
                     <i class="t-icon t-icon-view-list"></i>
                     <span>全部</span>
