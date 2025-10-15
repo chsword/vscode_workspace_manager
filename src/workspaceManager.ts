@@ -59,19 +59,17 @@ export class WorkspaceManager {
      * Log workspace operation with timestamp
      */
     private logOperation(operation: string, details: any): void {
-        const timestamp = new Date().toISOString();
-        console.log(`[${timestamp}] WorkspaceManager.${operation}:`, details);
+        this.logger.info(`WorkspaceManager.${operation}`, details);
     }
 
     /**
      * Log workspace operation error
      */
     private logError(operation: string, error: any, context?: any): void {
-        const timestamp = new Date().toISOString();
-        console.error(`[${timestamp}] WorkspaceManager.${operation} ERROR:`, {
+        this.logger.error(`WorkspaceManager.${operation} ERROR`, {
             error: error instanceof Error ? error.message : String(error),
             stack: error instanceof Error ? error.stack : undefined,
-            context
+            ...context
         });
     }
 
@@ -167,84 +165,58 @@ export class WorkspaceManager {
     }
 
     /**
-     * Get filtered workspaces
+     * Get filtered workspaces (delegates to Use Case)
      */
     async getWorkspaces(filter?: WorkspaceFilter): Promise<WorkspaceItem[]> {
-        let workspaces = await this.storage.getWorkspaces();
+        try {
+            // Convert legacy filter to Use Case request
+            const request = filter ? {
+                locationType: filter.location !== 'all' ? filter.location as 'local' | 'wsl' | 'remote' : undefined,
+                isFavorite: filter.showFavoritesOnly ? true : (filter.view === 'favorites' ? true : undefined),
+                tagIds: filter.tags,
+                searchQuery: filter.searchText,
+                sortBy: 'lastOpened' as const,
+                sortOrder: 'desc' as const
+            } : {};
 
-        if (!filter) {
-            return workspaces;
-        }
+            const result = await this.getWorkspacesUseCase.execute(request);
 
-        // Apply search filter
-        if (filter.searchText) {
-            const searchLower = filter.searchText.toLowerCase();
-            workspaces = workspaces.filter(w => 
-                w.name.toLowerCase().includes(searchLower) ||
-                w.path.toLowerCase().includes(searchLower) ||
-                w.description?.toLowerCase().includes(searchLower) ||
-                w.tags.some(tag => tag.toLowerCase().includes(searchLower))
-            );
-        }
-
-        // Apply tag filter
-        if (filter.tags && filter.tags.length > 0) {
-            workspaces = workspaces.filter(w => 
-                filter.tags!.some(tag => w.tags.includes(tag))
-            );
-        }
-
-        // Apply location filter
-        if (filter.location && filter.location !== 'all') {
-            workspaces = workspaces.filter(w => w.location.type === filter.location);
-        }
-
-        // Apply type filter
-        if (filter.type && filter.type !== 'all') {
-            workspaces = workspaces.filter(w => w.type === filter.type);
-        }
-
-        // Apply view filter
-        if (filter.view && filter.view !== 'all') {
-            const now = new Date();
-            const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            
-            switch (filter.view) {
-                case 'recent':
-                    workspaces = workspaces.filter(w => w.lastOpened >= oneWeekAgo);
-                    break;
-                case 'favorites':
-                    workspaces = workspaces.filter(w => w.isFavorite);
-                    break;
-                case 'pinned':
-                    workspaces = workspaces.filter(w => w.isPinned);
-                    break;
+            if (result.isFailure) {
+                this.logError('getWorkspaces', result.error);
+                // Fallback to storage for backward compatibility
+                return this.storage.getWorkspaces();
             }
-        }
 
-        // Apply type filter
-        if (filter.type && filter.type.length > 0) {
-            workspaces = workspaces.filter(w => filter.type!.includes(w.type));
-        }
+            // Convert entities back to items for legacy consumers
+            return result.value.workspaces.map(ws => ws.toItem());
 
-        // Apply favorites filter
-        if (filter.showFavoritesOnly) {
-            workspaces = workspaces.filter(w => w.isFavorite);
+        } catch (error) {
+            this.logError('getWorkspaces', error);
+            // Fallback to storage
+            return this.storage.getWorkspaces();
         }
-
-        // Apply pinned filter
-        if (filter.showPinnedOnly) {
-            workspaces = workspaces.filter(w => w.isPinned);
-        }
-
-        return workspaces;
     }
 
     /**
-     * Get workspace by ID
+     * Get workspace by ID (delegates to Use Case)
      */
     async getWorkspace(id: string): Promise<WorkspaceItem | undefined> {
-        return this.storage.getWorkspace(id);
+        try {
+            const result = await this.getWorkspaceByIdUseCase.execute({ workspaceId: id });
+
+            if (result.isFailure) {
+                this.logOperation('getWorkspace.notFound', { id, error: result.error.message });
+                // Fallback to storage
+                return this.storage.getWorkspace(id);
+            }
+
+            return result.value.toItem();
+
+        } catch (error) {
+            this.logError('getWorkspace', error, { id });
+            // Fallback to storage
+            return this.storage.getWorkspace(id);
+        }
     }
 
     /**
@@ -467,55 +439,127 @@ export class WorkspaceManager {
     }
 
     /**
-     * Add workspace to favorites
+     * Add workspace to favorites (delegates to Use Case)
      */
     async addToFavorites(id: string): Promise<void> {
-        const workspace = await this.getWorkspace(id);
-        if (workspace) {
-            workspace.isFavorite = true;
-            await this.storage.saveWorkspace(workspace);
+        try {
+            // First check current status
+            const workspace = await this.getWorkspace(id);
+            if (!workspace) {
+                return;
+            }
+
+            // Only toggle if not already favorite
+            if (!workspace.isFavorite) {
+                const result = await this.toggleFavoriteUseCase.execute({ workspaceId: id });
+
+                if (result.isFailure) {
+                    this.logError('addToFavorites', result.error, { id });
+                    // Fallback to legacy method
+                    workspace.isFavorite = true;
+                    await this.storage.saveWorkspace(workspace);
+                }
+            }
+
             this.fireWorkspacesChanged();
+
+        } catch (error) {
+            this.logError('addToFavorites', error, { id });
         }
     }
 
     /**
-     * Remove workspace from favorites
+     * Remove workspace from favorites (delegates to Use Case)
      */
     async removeFromFavorites(id: string): Promise<void> {
-        const workspace = await this.getWorkspace(id);
-        if (workspace) {
-            workspace.isFavorite = false;
-            await this.storage.saveWorkspace(workspace);
+        try {
+            // First check current status
+            const workspace = await this.getWorkspace(id);
+            if (!workspace) {
+                return;
+            }
+
+            // Only toggle if currently favorite
+            if (workspace.isFavorite) {
+                const result = await this.toggleFavoriteUseCase.execute({ workspaceId: id });
+
+                if (result.isFailure) {
+                    this.logError('removeFromFavorites', result.error, { id });
+                    // Fallback to legacy method
+                    workspace.isFavorite = false;
+                    await this.storage.saveWorkspace(workspace);
+                }
+            }
+
             this.fireWorkspacesChanged();
+
+        } catch (error) {
+            this.logError('removeFromFavorites', error, { id });
         }
     }
 
     /**
-     * Pin workspace to top
+     * Pin workspace to top (delegates to Use Case)
      */
     async pinWorkspace(id: string): Promise<void> {
-        const workspace = await this.getWorkspace(id);
-        if (workspace) {
-            workspace.isPinned = true;
-            await this.storage.saveWorkspace(workspace);
+        try {
+            // First check current status
+            const workspace = await this.getWorkspace(id);
+            if (!workspace) {
+                return;
+            }
+
+            // Only toggle if not already pinned
+            if (!workspace.isPinned) {
+                const result = await this.togglePinUseCase.execute({ workspaceId: id });
+
+                if (result.isFailure) {
+                    this.logError('pinWorkspace', result.error, { id });
+                    // Fallback to legacy method
+                    workspace.isPinned = true;
+                    await this.storage.saveWorkspace(workspace);
+                }
+            }
+
             this.fireWorkspacesChanged();
+
+        } catch (error) {
+            this.logError('pinWorkspace', error, { id });
         }
     }
 
     /**
-     * Unpin workspace
+     * Unpin workspace (delegates to Use Case)
      */
     async unpinWorkspace(id: string): Promise<void> {
-        const workspace = await this.getWorkspace(id);
-        if (workspace) {
-            workspace.isPinned = false;
-            await this.storage.saveWorkspace(workspace);
+        try {
+            // First check current status
+            const workspace = await this.getWorkspace(id);
+            if (!workspace) {
+                return;
+            }
+
+            // Only toggle if currently pinned
+            if (workspace.isPinned) {
+                const result = await this.togglePinUseCase.execute({ workspaceId: id });
+
+                if (result.isFailure) {
+                    this.logError('unpinWorkspace', result.error, { id });
+                    // Fallback to legacy method
+                    workspace.isPinned = false;
+                    await this.storage.saveWorkspace(workspace);
+                }
+            }
+
             this.fireWorkspacesChanged();
+
+        } catch (error) {
+            this.logError('unpinWorkspace', error, { id });
         }
     }
 
     /**
-     * Edit workspace tags
+     * Edit workspace tags (UI interaction - delegates update to Use Case)
      */
     async editTags(id: string): Promise<void> {
         const workspace = await this.getWorkspace(id);
@@ -538,14 +582,36 @@ export class WorkspaceManager {
         );
 
         if (selected) {
-            workspace.tags = selected.map(item => item.label);
-            await this.storage.saveWorkspace(workspace);
-            this.fireWorkspacesChanged();
+            try {
+                const newTags = selected.map(item => item.label);
+                const tagsToAdd = newTags.filter(tag => !workspace.tags.includes(tag));
+                const tagsToRemove = workspace.tags.filter(tag => !newTags.includes(tag));
+
+                const result = await this.updateWorkspaceUseCase.execute({
+                    workspaceId: id,
+                    tagsToAdd,
+                    tagsToRemove
+                });
+
+                if (result.isFailure) {
+                    this.logError('editTags', result.error, { id });
+                    // Fallback to legacy method
+                    workspace.tags = newTags;
+                    await this.storage.saveWorkspace(workspace);
+                }
+
+                this.fireWorkspacesChanged();
+
+            } catch (error) {
+                this.logError('editTags', error, { id });
+                // Fallback: still update UI
+                this.fireWorkspacesChanged();
+            }
         }
     }
 
     /**
-     * Edit workspace description
+     * Edit workspace description (UI interaction - delegates update to Use Case)
      */
     async editDescription(id: string): Promise<void> {
         const workspace = await this.getWorkspace(id);
@@ -560,28 +626,40 @@ export class WorkspaceManager {
         });
 
         if (description !== undefined) {
-            workspace.description = description;
-            await this.storage.saveWorkspace(workspace);
+            await this.updateDescription(id, description);
+        }
+    }
+
+    /**
+     * Update workspace description directly (delegates to Use Case)
+     */
+    async updateDescription(id: string, description: string): Promise<void> {
+        try {
+            const result = await this.updateWorkspaceUseCase.execute({
+                workspaceId: id,
+                description
+            });
+
+            if (result.isFailure) {
+                this.logError('updateDescription', result.error, { id });
+                // Fallback to legacy method
+                const workspace = await this.getWorkspace(id);
+                if (workspace) {
+                    workspace.description = description;
+                    await this.storage.saveWorkspace(workspace);
+                }
+            }
+
+            this.fireWorkspacesChanged();
+
+        } catch (error) {
+            this.logError('updateDescription', error, { id });
             this.fireWorkspacesChanged();
         }
     }
 
     /**
-     * Update workspace description directly (from webview inline editing)
-     */
-    async updateDescription(id: string, description: string): Promise<void> {
-        const workspace = await this.getWorkspace(id);
-        if (!workspace) {
-            return;
-        }
-
-        workspace.description = description;
-        await this.storage.saveWorkspace(workspace);
-        this.fireWorkspacesChanged();
-    }
-
-    /**
-     * Remove workspace from list
+     * Remove workspace from list (UI confirmation + delegates to Use Case)
      */
     async removeWorkspace(id: string): Promise<void> {
         const workspace = await this.getWorkspace(id);
@@ -596,8 +674,20 @@ export class WorkspaceManager {
         );
 
         if (choice === 'Remove') {
-            await this.storage.removeWorkspace(id);
-            this.fireWorkspacesChanged();
+            try {
+                const result = await this.deleteWorkspaceUseCase.execute({ workspaceId: id });
+
+                if (result.isFailure) {
+                    this.logError('removeWorkspace', result.error, { id });
+                    // Fallback to legacy method
+                    await this.storage.removeWorkspace(id);
+                }
+
+                this.fireWorkspacesChanged();
+
+            } catch (error) {
+                this.logError('removeWorkspace', error, { id });
+            }
         }
     }
 
