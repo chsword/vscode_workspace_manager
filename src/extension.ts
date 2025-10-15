@@ -4,6 +4,11 @@ import { WorkspaceWebviewPanel } from './webview/workspaceWebviewPanel';
 import { WorkspaceSyncService } from './services/workspaceSyncService';
 import { WorkspaceStorage } from './storage/workspaceStorage';
 
+// Phase 1: New infrastructure imports
+import { configureContainer, container } from './infrastructure/ioc/container';
+import { ILogger } from './infrastructure/logging/ILogger';
+import { runPhase1Tests } from './phase1-test';
+
 /**
  * Extension activation function
  * Called when the extension is first activated
@@ -11,6 +16,21 @@ import { WorkspaceStorage } from './storage/workspaceStorage';
 export function activate(context: vscode.ExtensionContext): void {
     console.log('Workspace Manager extension is being activated...');
 
+    // Phase 1: Initialize new infrastructure
+    try {
+        configureContainer(context);
+        const logger = container.resolve<ILogger>('ILogger');
+        logger.info('Workspace Manager: New infrastructure initialized');
+        
+        // Run Phase 1 tests in development mode (can be disabled later)
+        if (process.env.NODE_ENV !== 'production') {
+            runPhase1Tests();
+        }
+    } catch (error) {
+        console.error('Failed to initialize new infrastructure:', error);
+    }
+
+    // Legacy code: Keep existing functionality working
     // Initialize storage
     const storage = new WorkspaceStorage(context);
     
@@ -44,8 +64,8 @@ export function activate(context: vscode.ExtensionContext): void {
  */
 function createStatusBarItems(
     context: vscode.ExtensionContext,
-    workspaceManager: WorkspaceManager,
-    syncService: WorkspaceSyncService
+    _workspaceManager: WorkspaceManager,
+    _syncService: WorkspaceSyncService
 ): void {
     // Workspace Manager status bar item
     const workspaceManagerItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);

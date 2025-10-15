@@ -36,7 +36,7 @@ export class WorkspaceSyncService {
         });
 
         // Listen for workspace changes to capture new workspaces
-        vscode.workspace.onDidChangeWorkspaceFolders(event => {
+        vscode.workspace.onDidChangeWorkspaceFolders(_event => {
             this.captureCurrentWorkspace();
         });
 
@@ -131,6 +131,7 @@ export class WorkspaceSyncService {
 
     /**
      * Discover workspaces from VS Code's recently opened list
+     * @deprecated - Reserved for future use
      */
     private async discoverWorkspaces(): Promise<WorkspaceItem[]> {
         const workspaces: WorkspaceItem[] = [];
