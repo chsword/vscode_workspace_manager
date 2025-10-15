@@ -234,7 +234,7 @@
                       data-tag="${tag.name}" 
                       style="${style}"
                       title="${tag.description || tag.name}${tag.isSystem ? ' (System)' : ''}">
-                    <span class="tag-text">${tagIcon}${tagIcon ? ' ' : ''}${tag.name}${tag.usageCount > 0 ? ` (${tag.usageCount})` : ''}</span>
+                    <span class="tag-text">${tagIcon}${tag.name}${tag.usageCount > 0 ? ` (${tag.usageCount})` : ''}</span>
                 </span>
             `;
         });
@@ -509,10 +509,17 @@
                                 title="${workspace.isFavorite ? '取消收藏' : '添加到收藏'}">
                             <span class="codicon codicon-star${workspace.isFavorite ? '-full' : ''}" data-emoji="⭐"></span>
                         </button>
-                        <button class="action-btn" data-action="${workspace.isPinned ? 'unpinWorkspace' : 'pinWorkspace'}" 
-                                title="${workspace.isPinned ? '取消固定' : '固定到顶部'}">
+                        ${workspace.isPinned ? `
+                        <button class="action-btn" data-action="unpinWorkspace" 
+                                title="取消固定">
                             <span class="codicon codicon-bookmark" data-emoji="📌"></span>
                         </button>
+                        ` : `
+                        <button class="action-btn" data-action="pinWorkspace" 
+                                title="固定到顶部">
+                            <span class="codicon codicon-pin" data-emoji="�"></span>
+                        </button>
+                        `}
                         <button class="action-btn" data-action="editTags" title="编辑标签">
                             <span class="codicon codicon-symbol-snippet" data-emoji="🏷️"></span>
                         </button>

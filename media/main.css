@@ -724,6 +724,17 @@ body {
     color: var(--vscode-foreground);
 }
 
+/* Version badge */
+.version-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background-color: var(--vscode-badge-background);
+    color: var(--vscode-badge-foreground);
+    letter-spacing: 0.5px;
+}
+
 .header::after {
     content: '';
     position: absolute;
@@ -987,6 +998,20 @@ body {
     letter-spacing: 0.3px;
     line-height: 20px;
     user-select: none;
+}
+
+/* 标签文本容器 */
+.tag-chip .tag-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 标签内的图标 */
+.tag-chip .tag-text .codicon {
+    font-size: 14px;
+    line-height: 1;
+    margin: 0;
 }
 
 /* 未选中状态 - TDesign 默认 */

@@ -221,6 +221,9 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
         
         // Add version parameter to force cache refresh
         const version = Date.now();
+        
+        // Get extension version from package.json
+        const extensionVersion = vscode.extensions.getExtension('chsword.chsword-workspace-manager')?.packageJSON.version || '0.0.0';
 
         return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -246,6 +249,7 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
             <div class="brand">
                 <img src="${logoUri}" class="app-logo" alt="Workspace Manager Logo" />
                 <span class="brand-name">Workspace Manager</span>
+                <span class="version-badge">v${extensionVersion}</span>
             </div>
             <div class="search-container">
                 <div class="search-input-wrapper">
