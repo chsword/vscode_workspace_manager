@@ -247,7 +247,7 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
                     <span class="codicon codicon-search search-icon" data-emoji="🔍"></span>
                     <input type="text" id="searchInput" placeholder="搜索工作区..." />
                     <button id="clearSearchBtn" class="clear-search-btn" style="display: none;" title="清除搜索">
-                        <span class="codicon codicon-close"></span>
+                        <span class="codicon codicon-close" data-emoji="✖️"></span>
                     </button>
                 </div>
             </div>
@@ -270,7 +270,7 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
         <div class="filters">
             <div class="location-filters">
                 <span class="filter-label">
-                    <span class="codicon codicon-location"></span>
+                    <span class="codicon codicon-location" data-emoji="📍"></span>
                     位置
                 </span>
                 <button class="filter-btn active" data-location="all">
@@ -293,7 +293,7 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
 
             <div class="type-filters">
                 <span class="filter-label">
-                    <span class="codicon codicon-folder"></span>
+                    <span class="codicon codicon-folder" data-emoji="📁"></span>
                     类型
                 </span>
                 <button class="type-btn active" data-type="all">
@@ -305,7 +305,7 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
                     <span>工作区</span>
                 </button>
                 <button class="type-btn" data-type="folder">
-                    <span class="codicon codicon-folder"></span>
+                    <span class="codicon codicon-folder" data-emoji="📁"></span>
                     <span>文件夹</span>
                 </button>
             </div>
@@ -316,7 +316,7 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
                     视图
                 </span>
                 <button class="view-btn active" data-view="all">
-                    <span class="codicon codicon-list-unordered"></span>
+                    <span class="codicon codicon-list-unordered" data-emoji="🗂️"></span>
                     <span>全部</span>
                 </button>
                 <button class="view-btn" data-view="recent">

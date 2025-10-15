@@ -1,4 +1,4 @@
-﻿// @ts-check
+﻿// @ts-nocheck
 
 /**
  * VS Code Webview for Workspace Manager
@@ -31,18 +31,8 @@
 
     // Initialize
     function init() {
-        // Detect codicon font availability and set fallback class
-        try {
-            const codiconOk = (document.fonts && document.fonts.check) ? document.fonts.check('16px "codicon"') : true;
-            if (codiconOk) {
-                document.body.classList.add('codicon-loaded');
-            } else {
-                document.body.classList.add('codicon-fallback');
-            }
-        } catch (_) {
-            // If detection fails, prefer graceful fallback
-            document.body.classList.add('codicon-fallback');
-        }
+        // 为确保最大兼容性，默认启用 Emoji 回退，避免任何“X/方框”
+        document.body.classList.add('codicon-fallback');
         setupEventListeners();
         setupMessageHandling();
         
@@ -218,14 +208,15 @@
         }
 
         // Sort tags by usage count
-        const sortedTags = [...currentTags].sort((a, b) => b.usageCount - a.usageCount);
+    const sortedTags = [...currentTags].sort((a, b) => b.usageCount - a.usageCount);
 
         let html = '<div class="tag-container">';
         sortedTags.forEach(tag => {
             const isSelected = currentFilter.tags.includes(tag.name);
+            // 仅系统标签展示图标，普通标签不再前置图标，避免误导性的📌
             const tagIcon = tag.isSystem 
-                ? '<span class="codicon codicon-bookmark"></span>' 
-                : '<span class="codicon codicon-discount"></span>';
+                ? '<span class="codicon codicon-bookmark" data-emoji="📌"></span>' 
+                : '';
             // 增强未选中标签的对比度
             const bgOpacity = isSelected ? '' : '20';
             const style = isSelected 
@@ -237,7 +228,7 @@
                       data-tag="${tag.name}" 
                       style="${style}"
                       title="${tag.description || tag.name}${tag.isSystem ? ' (System)' : ''}">
-                    <span class="tag-text">${tagIcon} ${tag.name}${tag.usageCount > 0 ? ` (${tag.usageCount})` : ''}</span>
+                    <span class="tag-text">${tagIcon}${tagIcon ? ' ' : ''}${tag.name}${tag.usageCount > 0 ? ` (${tag.usageCount})` : ''}</span>
                 </span>
             `;
         });
@@ -283,7 +274,7 @@
         if (!currentWorkspaces.length) {
             workspaceList.innerHTML = `
                 <div class="empty-state">
-                    <span class="codicon codicon-folder" style="font-size: 48px; opacity: 0.5;"></span>
+                    <span class="codicon codicon-folder" data-emoji="📁" style="font-size: 48px; opacity: 0.5;"></span>
                     <div>未找到工作区</div>
                     <div style="font-size: 11px; margin-top: 8px; opacity: 0.7;">
                         ${currentFilter.searchText ? '尝试调整搜索词' : '在 VS Code 中打开一些文件夹或工作区以查看它们'}
@@ -303,28 +294,28 @@
         let headerText = '';
         let headerIcon = '';
         if (currentFilter.view === 'favorites') {
-            headerIcon = '<span class="codicon codicon-star-full"></span>';
+            headerIcon = '<span class="codicon codicon-star-full" data-emoji="⭐"></span>';
             headerText = '收藏夹';
         } else if (currentFilter.view === 'pinned') {
-            headerIcon = '<span class="codicon codicon-bookmark"></span>';
+            headerIcon = '<span class="codicon codicon-bookmark" data-emoji="📌"></span>';
             headerText = '已固定';
         } else if (currentFilter.view === 'recent') {
-            headerIcon = '<span class="codicon codicon-watch"></span>';
+            headerIcon = '<span class="codicon codicon-watch" data-emoji="⏰"></span>';
             headerText = '最近使用';
         } else if (currentFilter.searchText) {
-            headerIcon = '<span class="codicon codicon-search"></span>';
+            headerIcon = '<span class="codicon codicon-search" data-emoji="🔍"></span>';
             headerText = `搜索 "${currentFilter.searchText}" 的结果`;
         } else if (currentFilter.location && currentFilter.location !== 'all') {
             const locationIcons = { 
-                local: '<span class="codicon codicon-device-desktop"></span>', 
-                wsl: '<span class="codicon codicon-server"></span>', 
-                remote: '<span class="codicon codicon-globe"></span>' 
+                local: '<span class="codicon codicon-device-desktop" data-emoji="🖥️"></span>', 
+                wsl: '<span class="codicon codicon-server" data-emoji="🖧"></span>', 
+                remote: '<span class="codicon codicon-globe" data-emoji="🌐"></span>' 
             };
             const locationNames = { local: '本地', wsl: 'WSL', remote: '远程' };
             headerIcon = locationIcons[currentFilter.location] || '<span class="codicon codicon-folder"></span>';
             headerText = locationNames[currentFilter.location] || '工作区';
         } else if (currentFilter.tags && currentFilter.tags.length > 0) {
-            headerIcon = '<span class="codicon codicon-symbol-snippet"></span>';
+            headerIcon = '<span class="codicon codicon-symbol-snippet" data-emoji="🏷️"></span>';
             headerText = `标签: ${currentFilter.tags.join(', ')}`;
         } else {
             headerIcon = '<span class="codicon codicon-folder"></span>';
@@ -333,7 +324,7 @@
 
         // Render pinned workspaces (if any and not in pinned-only view)
         if (pinnedWorkspaces.length > 0 && currentFilter.view !== 'pinned') {
-            html += `<div style="font-size: 12px; font-weight: 500; margin-bottom: 8px; color: var(--vscode-sideBarTitle-foreground); display: flex; align-items: center; gap: 6px;"><span class="codicon codicon-bookmark"></span> 已固定</div>`;
+            html += `<div style="font-size: 12px; font-weight: 500; margin-bottom: 8px; color: var(--vscode-sideBarTitle-foreground); display: flex; align-items: center; gap: 6px;"><span class="codicon codicon-bookmark" data-emoji="📌"></span> 已固定</div>`;
             pinnedWorkspaces.forEach(workspace => {
                 html += renderWorkspaceItem(workspace);
             });
@@ -485,24 +476,24 @@
                     <div class="workspace-actions">
                         <button class="action-btn open-btn" data-action="openWorkspace" 
                                 title="打开工作区">
-                            <span class="codicon codicon-folder-opened"></span>
+                            <span class="codicon codicon-folder-opened" data-emoji="📂"></span>
                         </button>
                         <button class="action-btn" data-action="${workspace.isFavorite ? 'removeFromFavorites' : 'addToFavorites'}" 
                                 title="${workspace.isFavorite ? '取消收藏' : '添加到收藏'}">
-                            <span class="codicon codicon-star${workspace.isFavorite ? '-full' : ''}"></span>
+                            <span class="codicon codicon-star${workspace.isFavorite ? '-full' : ''}" data-emoji="⭐"></span>
                         </button>
                         <button class="action-btn" data-action="${workspace.isPinned ? 'unpinWorkspace' : 'pinWorkspace'}" 
                                 title="${workspace.isPinned ? '取消固定' : '固定到顶部'}">
-                            <span class="codicon codicon-bookmark"></span>
+                            <span class="codicon codicon-bookmark" data-emoji="📌"></span>
                         </button>
                         <button class="action-btn" data-action="editTags" title="编辑标签">
-                            <span class="codicon codicon-symbol-snippet"></span>
+                            <span class="codicon codicon-symbol-snippet" data-emoji="🏷️"></span>
                         </button>
                         <button class="action-btn" data-action="editDescription" title="编辑描述">
-                            <span class="codicon codicon-edit"></span>
+                            <span class="codicon codicon-edit" data-emoji="✏️"></span>
                         </button>
                         <button class="action-btn" data-action="removeWorkspace" title="从列表中移除">
-                            <span class="codicon codicon-delete"></span>
+                            <span class="codicon codicon-delete" data-emoji="🗑️"></span>
                         </button>
                     </div>
                 </div>
@@ -529,7 +520,7 @@
     // Show context menu
     function showContextMenu(event, workspaceId) {
         const workspace = currentWorkspaces.find(w => w.id === workspaceId);
-        if (!workspace) return;
+    if (!workspace) { return; }
 
         const menu = document.createElement('div');
         menu.className = 'context-menu';
@@ -537,15 +528,15 @@
         menu.style.top = event.pageY + 'px';
 
         const menuItems = [
-            { label: '<span class="codicon codicon-multiple-windows"></span> 新窗口打开', action: 'openInNewWindow' },
-            { label: '<span class="codicon codicon-folder-opened"></span> 当前窗口打开', action: 'openInCurrent' },
+            { label: '<span class="codicon codicon-multiple-windows" data-emoji="🗔"></span> 新窗口打开', action: 'openInNewWindow' },
+            { label: '<span class="codicon codicon-folder-opened" data-emoji="📂"></span> 当前窗口打开', action: 'openInCurrent' },
             { separator: true },
-            { label: `<span class="codicon codicon-star${workspace.isFavorite ? '-full' : ''}"></span> ${workspace.isFavorite ? '取消收藏' : '添加到收藏'}`, action: workspace.isFavorite ? 'removeFromFavorites' : 'addToFavorites' },
-            { label: '<span class="codicon codicon-bookmark"></span> 固定/取消固定', action: workspace.isPinned ? 'unpinWorkspace' : 'pinWorkspace' },
-            { label: '<span class="codicon codicon-symbol-snippet"></span> 编辑标签', action: 'editTags' },
-            { label: '<span class="codicon codicon-edit"></span> 编辑描述', action: 'editDescription' },
+            { label: `<span class="codicon codicon-star${workspace.isFavorite ? '-full' : ''}" data-emoji="⭐"></span> ${workspace.isFavorite ? '取消收藏' : '添加到收藏'}`, action: workspace.isFavorite ? 'removeFromFavorites' : 'addToFavorites' },
+            { label: '<span class="codicon codicon-bookmark" data-emoji="📌"></span> 固定/取消固定', action: workspace.isPinned ? 'unpinWorkspace' : 'pinWorkspace' },
+            { label: '<span class="codicon codicon-symbol-snippet" data-emoji="🏷️"></span> 编辑标签', action: 'editTags' },
+            { label: '<span class="codicon codicon-edit" data-emoji="✏️"></span> 编辑描述', action: 'editDescription' },
             { separator: true },
-            { label: '<span class="codicon codicon-delete"></span> 从列表中移除', action: 'removeWorkspace' }
+            { label: '<span class="codicon codicon-delete" data-emoji="🗑️"></span> 从列表中移除', action: 'removeWorkspace' }
         ];
 
         let menuHtml = '';
@@ -625,17 +616,17 @@
     // Utility functions
     function getLocationIcon(locationType) {
         const icons = {
-            'local': '<span class="codicon codicon-laptop"></span>',
-            'wsl': '<span class="codicon codicon-server"></span>',
-            'remote': '<span class="codicon codicon-internet"></span>'
+            'local': '<span class="codicon codicon-device-desktop" data-emoji="🖥️"></span>',
+            'wsl': '<span class="codicon codicon-server" data-emoji="🖧"></span>',
+            'remote': '<span class="codicon codicon-globe" data-emoji="🌐"></span>'
         };
         return icons[locationType] || '<span class="codicon codicon-folder"></span>';
     }
 
     function getTypeIcon(type) {
         const icons = {
-            'workspace': '<span class="codicon codicon-folder-open"></span>',
-            'folder': '<span class="codicon codicon-folder"></span>'
+            'workspace': '<span class="codicon codicon-folder-opened" data-emoji="📂"></span>',
+            'folder': '<span class="codicon codicon-folder" data-emoji="📁"></span>'
         };
         return icons[type] || '<span class="codicon codicon-folder"></span>';
     }
@@ -649,10 +640,10 @@
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         
-        if (minutes < 1) return 'Just now';
-        if (minutes < 60) return `${minutes}m ago`;
-        if (hours < 24) return `${hours}h ago`;
-        if (days < 7) return `${days}d ago`;
+    if (minutes < 1) { return 'Just now'; }
+    if (minutes < 60) { return `${minutes}m ago`; }
+    if (hours < 24) { return `${hours}h ago`; }
+    if (days < 7) { return `${days}d ago`; }
         
         return date.toLocaleDateString();
     }

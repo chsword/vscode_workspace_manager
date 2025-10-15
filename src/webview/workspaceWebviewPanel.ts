@@ -254,6 +254,12 @@ export class WorkspaceWebviewPanel {
         const styleUri = this.panel.webview.asWebviewUri(
             vscode.Uri.joinPath(this.extensionUri, 'media', 'main.css')
         );
+        const codiconCssUri = this.panel.webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionUri, 'node_modules', '@vscode', 'codicons', 'dist', 'codicon.css')
+        );
+        const codiconFontUri = this.panel.webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionUri, 'node_modules', '@vscode', 'codicons', 'dist', 'codicon.ttf')
+        );
 
         return `<!DOCTYPE html>
 <html lang="en">
@@ -262,8 +268,17 @@ export class WorkspaceWebviewPanel {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${this.panel.webview.cspSource} 'unsafe-inline'; script-src ${this.panel.webview.cspSource}; font-src ${this.panel.webview.cspSource};">
     <link href="${styleUri}" rel="stylesheet">
+    <link href="${codiconCssUri}" rel="stylesheet">
     <title>Workspace Manager</title>
     <style>
+        /* Codicon font fallback */
+        @font-face {
+            font-family: "codicon";
+            src: url("${codiconFontUri}") format("truetype");
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
         body {
             padding: 20px;
             max-width: 1200px;
@@ -294,22 +309,22 @@ export class WorkspaceWebviewPanel {
                 <div class="search-input-wrapper">
                     <input type="text" id="searchInput" placeholder="🔍 Search workspaces..." />
                     <button id="clearSearchBtn" class="clear-search-btn" title="Clear search" style="display: none;">
-                        <span class="codicon codicon-close"></span>
+                        <span class="codicon codicon-close" data-emoji="✖️"></span>
                     </button>
                 </div>
             </div>
             <div class="actions">
                 <button id="syncBtn" class="icon-button" title="Sync VS Code History">
-                    <span class="codicon codicon-sync"></span>
+                    <span class="codicon codicon-sync" data-emoji="🔁"></span>
                 </button>
                 <button id="refreshBtn" class="icon-button" title="Refresh">
-                    <span class="codicon codicon-refresh"></span>
+                    <span class="codicon codicon-refresh" data-emoji="🔄"></span>
                 </button>
                 <button id="autoSyncBtn" class="icon-button" title="Toggle Auto Sync">
-                    <span class="codicon codicon-sync-ignored"></span>
+                    <span class="codicon codicon-sync-ignored" data-emoji="🔁"></span>
                 </button>
                 <button id="settingsBtn" class="icon-button" title="Settings">
-                    <span class="codicon codicon-gear"></span>
+                    <span class="codicon codicon-gear" data-emoji="⚙️"></span>
                 </button>
             </div>
         </div>
@@ -343,7 +358,7 @@ export class WorkspaceWebviewPanel {
         <div class="content">
             <div id="workspaceList">
                 <div class="loading">
-                    <span class="codicon codicon-loading"></span>
+                    <span class="codicon codicon-loading rotating" data-emoji="⏳"></span>
                     Loading workspaces...
                 </div>
             </div>
