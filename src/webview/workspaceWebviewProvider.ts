@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+﻿import * as vscode from 'vscode';
 import { WorkspaceManager } from '../workspaceManager';
 import { WorkspaceItem, WorkspaceFilter } from '../types';
 
@@ -48,7 +48,11 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
 
         webviewView.webview.options = {
             enableScripts: true,
-            localResourceRoots: [this.extensionUri]
+            localResourceRoots: [
+                this.extensionUri,
+                vscode.Uri.joinPath(this.extensionUri, 'media'),
+                vscode.Uri.joinPath(this.extensionUri, 'node_modules', '@vscode', 'codicons', 'dist')
+            ]
         };
 
         webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
@@ -206,17 +210,33 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
      * Get HTML content for webview
      */
     private getHtmlForWebview(webview: vscode.Webview): string {
-        // Get URIs for resources
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'main.js'));
-        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'main.css'));
+    // Get URIs for resources
+    const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'main.js'));
+    const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'main.css'));
+    // Use official codicon.css so the font is resolved via its relative URL
+    const codiconCssUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'node_modules', '@vscode', 'codicons', 'dist', 'codicon.css'));
+    // Also prepare a direct font URL as a fallback (some webview envs resolve relative URLs differently)
+    const codiconFontUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'node_modules', '@vscode', 'codicons', 'dist', 'codicon.ttf'));
+        
+        // Add version parameter to force cache refresh
+        const version = Date.now();
 
         return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource};">
-    <link href="${styleUri}" rel="stylesheet">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; script-src ${webview.cspSource};">
+    <link href="${codiconCssUri}" rel="stylesheet">
+    <style>
+        /* Fallback to ensure codicon font is available */
+        @font-face {
+            font-family: "codicon";
+            font-display: block;
+            src: url("${codiconFontUri}") format("truetype");
+        }
+    </style>
+    <link href="${styleUri}?v=${version}" rel="stylesheet">
     <title>工作区管理器</title>
 </head>
 <body>
@@ -224,25 +244,25 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
         <div class="header">
             <div class="search-container">
                 <div class="search-input-wrapper">
-                    <i class="t-icon t-icon-search search-icon"></i>
+                    <span class="codicon codicon-search search-icon"></span>
                     <input type="text" id="searchInput" placeholder="搜索工作区..." />
                     <button id="clearSearchBtn" class="clear-search-btn" style="display: none;" title="清除搜索">
-                        <i class="t-icon t-icon-close"></i>
+                        <span class="codicon codicon-close"></span>
                     </button>
                 </div>
             </div>
             <div class="actions">
                 <button id="syncBtn" class="icon-button" title="同步 VS Code 历史记录">
-                    <i class="t-icon t-icon-refresh"></i>
+                    <span class="codicon codicon-sync"></span>
                 </button>
                 <button id="refreshBtn" class="icon-button" title="刷新">
-                    <i class="t-icon t-icon-rollback"></i>
+                    <span class="codicon codicon-refresh"></span>
                 </button>
                 <button id="autoSyncBtn" class="icon-button" title="切换自动同步">
-                    <i class="t-icon t-icon-swap"></i>
+                    <span class="codicon codicon-sync"></span>
                 </button>
                 <button id="settingsBtn" class="icon-button" title="设置">
-                    <i class="t-icon t-icon-setting"></i>
+                    <span class="codicon codicon-settings-gear"></span>
                 </button>
             </div>
         </div>
@@ -250,65 +270,65 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
         <div class="filters">
             <div class="location-filters">
                 <span class="filter-label">
-                    <i class="t-icon t-icon-location"></i>
+                    <span class="codicon codicon-location"></span>
                     位置
                 </span>
                 <button class="filter-btn active" data-location="all">
-                    <i class="t-icon t-icon-view-list"></i>
+                    <span class="codicon codicon-list-unordered"></span>
                     <span>全部</span>
                 </button>
                 <button class="filter-btn" data-location="local">
-                    <i class="t-icon t-icon-laptop"></i>
+                    <span class="codicon codicon-device-desktop"></span>
                     <span>本地</span>
                 </button>
                 <button class="filter-btn" data-location="wsl">
-                    <i class="t-icon t-icon-server"></i>
+                    <span class="codicon codicon-server"></span>
                     <span>WSL</span>
                 </button>
                 <button class="filter-btn" data-location="remote">
-                    <i class="t-icon t-icon-internet"></i>
+                    <span class="codicon codicon-globe"></span>
                     <span>远程</span>
                 </button>
             </div>
 
             <div class="type-filters">
                 <span class="filter-label">
-                    <i class="t-icon t-icon-folder"></i>
+                    <span class="codicon codicon-folder"></span>
                     类型
                 </span>
                 <button class="type-btn active" data-type="all">
-                    <i class="t-icon t-icon-view-module"></i>
+                    <span class="codicon codicon-list-tree"></span>
                     <span>全部类型</span>
                 </button>
                 <button class="type-btn" data-type="workspace">
-                    <i class="t-icon t-icon-folder-open"></i>
+                    <span class="codicon codicon-folder-opened"></span>
                     <span>工作区</span>
                 </button>
                 <button class="type-btn" data-type="folder">
-                    <i class="t-icon t-icon-folder"></i>
+                    <span class="codicon codicon-folder"></span>
                     <span>文件夹</span>
                 </button>
             </div>
 
             <div class="view-filters">
                 <span class="filter-label">
-                    <i class="t-icon t-icon-view-list"></i>
+                    <span class="codicon codicon-list-unordered"></span>
                     视图
                 </span>
                 <button class="view-btn active" data-view="all">
-                    <i class="t-icon t-icon-view-list"></i>
+                    <span class="codicon codicon-list-unordered"></span>
                     <span>全部</span>
                 </button>
                 <button class="view-btn" data-view="recent">
-                    <i class="t-icon t-icon-time"></i>
+                    <span class="codicon codicon-watch"></span>
                     <span>最近</span>
                 </button>
                 <button class="view-btn" data-view="favorites">
-                    <i class="t-icon t-icon-star-filled"></i>
+                    <span class="codicon codicon-star-full"></span>
                     <span>收藏</span>
                 </button>
                 <button class="view-btn" data-view="pinned">
-                    <i class="t-icon t-icon-pin-filled"></i>
+                    <span class="codicon codicon-bookmark"></span>
                     <span>固定</span>
                 </button>
             </div>
@@ -316,7 +336,7 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
 
         <div class="tag-filters">
             <div class="tag-filters-header">
-                <i class="t-icon t-icon-discount"></i>
+                <span class="codicon codicon-symbol-snippet"></span>
                 <span>标签</span>
             </div>
             <div id="tagFilters"></div>
@@ -325,7 +345,7 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
         <div class="content">
             <div id="workspaceList">
                 <div class="loading">
-                    <i class="t-icon t-icon-loading rotating"></i>
+                    <span class="codicon codicon-loading rotating"></span>
                     <span>加载工作区中...</span>
                 </div>
             </div>
@@ -336,7 +356,7 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
         </div>
     </div>
 
-    <script src="${scriptUri}"></script>
+    <script src="${scriptUri}?v=${version}"></script>
 </body>
 </html>`;
     }

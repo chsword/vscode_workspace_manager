@@ -1,4 +1,4 @@
-// @ts-check
+﻿// @ts-check
 
 /**
  * VS Code Webview for Workspace Manager
@@ -74,13 +74,13 @@
 
         // Sync button
         syncBtn.addEventListener('click', () => {
-            syncBtn.querySelector('.t-icon').classList.add('rotating');
+            syncBtn.querySelector('.codicon').classList.add('rotating');
             syncBtn.disabled = true;
             vscode.postMessage({ type: 'syncWorkspaces' });
             
             // Reset button state after a delay
             setTimeout(() => {
-                syncBtn.querySelector('.t-icon').classList.remove('rotating');
+                syncBtn.querySelector('.codicon').classList.remove('rotating');
                 syncBtn.disabled = false;
             }, 2000);
         });
@@ -172,7 +172,7 @@
     // Update auto sync button state
     function updateAutoSyncButton(isEnabled) {
         if (autoSyncBtn) {
-            const icon = autoSyncBtn.querySelector('.t-icon');
+            const icon = autoSyncBtn.querySelector('.codicon');
             if (icon) {
                 if (isEnabled) {
                     icon.classList.add('rotating');
@@ -212,8 +212,8 @@
         sortedTags.forEach(tag => {
             const isSelected = currentFilter.tags.includes(tag.name);
             const tagIcon = tag.isSystem 
-                ? '<i class="t-icon t-icon-bookmark"></i>' 
-                : '<i class="t-icon t-icon-discount"></i>';
+                ? '<span class="codicon codicon-bookmark"></span>' 
+                : '<span class="codicon codicon-discount"></span>';
             // 增强未选中标签的对比度
             const bgOpacity = isSelected ? '' : '20';
             const style = isSelected 
@@ -271,7 +271,7 @@
         if (!currentWorkspaces.length) {
             workspaceList.innerHTML = `
                 <div class="empty-state">
-                    <i class="t-icon t-icon-folder" style="font-size: 48px; opacity: 0.5;"></i>
+                    <span class="codicon codicon-folder" style="font-size: 48px; opacity: 0.5;"></span>
                     <div>未找到工作区</div>
                     <div style="font-size: 11px; margin-top: 8px; opacity: 0.7;">
                         ${currentFilter.searchText ? '尝试调整搜索词' : '在 VS Code 中打开一些文件夹或工作区以查看它们'}
@@ -291,37 +291,37 @@
         let headerText = '';
         let headerIcon = '';
         if (currentFilter.view === 'favorites') {
-            headerIcon = '<i class="t-icon t-icon-star-filled"></i>';
+            headerIcon = '<span class="codicon codicon-star-full"></span>';
             headerText = '收藏夹';
         } else if (currentFilter.view === 'pinned') {
-            headerIcon = '<i class="t-icon t-icon-pin-filled"></i>';
+            headerIcon = '<span class="codicon codicon-bookmark"></span>';
             headerText = '已固定';
         } else if (currentFilter.view === 'recent') {
-            headerIcon = '<i class="t-icon t-icon-time"></i>';
+            headerIcon = '<span class="codicon codicon-watch"></span>';
             headerText = '最近使用';
         } else if (currentFilter.searchText) {
-            headerIcon = '<i class="t-icon t-icon-search"></i>';
+            headerIcon = '<span class="codicon codicon-search"></span>';
             headerText = `搜索 "${currentFilter.searchText}" 的结果`;
         } else if (currentFilter.location && currentFilter.location !== 'all') {
             const locationIcons = { 
-                local: '<i class="t-icon t-icon-laptop"></i>', 
-                wsl: '<i class="t-icon t-icon-server"></i>', 
-                remote: '<i class="t-icon t-icon-internet"></i>' 
+                local: '<span class="codicon codicon-device-desktop"></span>', 
+                wsl: '<span class="codicon codicon-server"></span>', 
+                remote: '<span class="codicon codicon-globe"></span>' 
             };
             const locationNames = { local: '本地', wsl: 'WSL', remote: '远程' };
-            headerIcon = locationIcons[currentFilter.location] || '<i class="t-icon t-icon-folder"></i>';
+            headerIcon = locationIcons[currentFilter.location] || '<span class="codicon codicon-folder"></span>';
             headerText = locationNames[currentFilter.location] || '工作区';
         } else if (currentFilter.tags && currentFilter.tags.length > 0) {
-            headerIcon = '<i class="t-icon t-icon-discount"></i>';
+            headerIcon = '<span class="codicon codicon-symbol-snippet"></span>';
             headerText = `标签: ${currentFilter.tags.join(', ')}`;
         } else {
-            headerIcon = '<i class="t-icon t-icon-folder"></i>';
+            headerIcon = '<span class="codicon codicon-folder"></span>';
             headerText = '全部工作区';
         }
 
         // Render pinned workspaces (if any and not in pinned-only view)
         if (pinnedWorkspaces.length > 0 && currentFilter.view !== 'pinned') {
-            html += `<div style="font-size: 12px; font-weight: 500; margin-bottom: 8px; color: var(--vscode-sideBarTitle-foreground); display: flex; align-items: center; gap: 6px;"><i class="t-icon t-icon-pin-filled"></i> 已固定</div>`;
+            html += `<div style="font-size: 12px; font-weight: 500; margin-bottom: 8px; color: var(--vscode-sideBarTitle-foreground); display: flex; align-items: center; gap: 6px;"><span class="codicon codicon-bookmark"></span> 已固定</div>`;
             pinnedWorkspaces.forEach(workspace => {
                 html += renderWorkspaceItem(workspace);
             });
@@ -473,24 +473,24 @@
                     <div class="workspace-actions">
                         <button class="action-btn open-btn" data-action="openWorkspace" 
                                 title="打开工作区">
-                            <i class="t-icon t-icon-folder-open"></i>
+                            <span class="codicon codicon-folder-opened"></span>
                         </button>
                         <button class="action-btn" data-action="${workspace.isFavorite ? 'removeFromFavorites' : 'addToFavorites'}" 
                                 title="${workspace.isFavorite ? '取消收藏' : '添加到收藏'}">
-                            <i class="t-icon t-icon-star${workspace.isFavorite ? '-filled' : ''}"></i>
+                            <span class="codicon codicon-star${workspace.isFavorite ? '-full' : ''}"></span>
                         </button>
                         <button class="action-btn" data-action="${workspace.isPinned ? 'unpinWorkspace' : 'pinWorkspace'}" 
                                 title="${workspace.isPinned ? '取消固定' : '固定到顶部'}">
-                            <i class="t-icon t-icon-pin${workspace.isPinned ? '-filled' : ''}"></i>
+                            <span class="codicon codicon-bookmark"></span>
                         </button>
                         <button class="action-btn" data-action="editTags" title="编辑标签">
-                            <i class="t-icon t-icon-discount"></i>
+                            <span class="codicon codicon-symbol-snippet"></span>
                         </button>
                         <button class="action-btn" data-action="editDescription" title="编辑描述">
-                            <i class="t-icon t-icon-edit"></i>
+                            <span class="codicon codicon-edit"></span>
                         </button>
                         <button class="action-btn" data-action="removeWorkspace" title="从列表中移除">
-                            <i class="t-icon t-icon-delete"></i>
+                            <span class="codicon codicon-delete"></span>
                         </button>
                     </div>
                 </div>
@@ -525,15 +525,15 @@
         menu.style.top = event.pageY + 'px';
 
         const menuItems = [
-            { label: '<i class="t-icon t-icon-jump"></i> 新窗口打开', action: 'openInNewWindow' },
-            { label: '<i class="t-icon t-icon-folder-open"></i> 当前窗口打开', action: 'openInCurrent' },
+            { label: '<span class="codicon codicon-multiple-windows"></span> 新窗口打开', action: 'openInNewWindow' },
+            { label: '<span class="codicon codicon-folder-opened"></span> 当前窗口打开', action: 'openInCurrent' },
             { separator: true },
-            { label: `<i class="t-icon t-icon-star${workspace.isFavorite ? '-filled' : ''}"></i> ${workspace.isFavorite ? '取消收藏' : '添加到收藏'}`, action: workspace.isFavorite ? 'removeFromFavorites' : 'addToFavorites' },
-            { label: `<i class="t-icon t-icon-pin${workspace.isPinned ? '-filled' : ''}"></i> ${workspace.isPinned ? '取消固定' : '固定到顶部'}`, action: workspace.isPinned ? 'unpinWorkspace' : 'pinWorkspace' },
-            { label: '<i class="t-icon t-icon-discount"></i> 编辑标签', action: 'editTags' },
-            { label: '<i class="t-icon t-icon-edit"></i> 编辑描述', action: 'editDescription' },
+            { label: `<span class="codicon codicon-star${workspace.isFavorite ? '-full' : ''}"></span> ${workspace.isFavorite ? '取消收藏' : '添加到收藏'}`, action: workspace.isFavorite ? 'removeFromFavorites' : 'addToFavorites' },
+            { label: '<span class="codicon codicon-bookmark"></span> 固定/取消固定', action: workspace.isPinned ? 'unpinWorkspace' : 'pinWorkspace' },
+            { label: '<span class="codicon codicon-symbol-snippet"></span> 编辑标签', action: 'editTags' },
+            { label: '<span class="codicon codicon-edit"></span> 编辑描述', action: 'editDescription' },
             { separator: true },
-            { label: '<i class="t-icon t-icon-delete"></i> 从列表中移除', action: 'removeWorkspace' }
+            { label: '<span class="codicon codicon-delete"></span> 从列表中移除', action: 'removeWorkspace' }
         ];
 
         let menuHtml = '';
@@ -613,19 +613,19 @@
     // Utility functions
     function getLocationIcon(locationType) {
         const icons = {
-            'local': '<i class="t-icon t-icon-laptop"></i>',
-            'wsl': '<i class="t-icon t-icon-server"></i>',
-            'remote': '<i class="t-icon t-icon-internet"></i>'
+            'local': '<span class="codicon codicon-laptop"></span>',
+            'wsl': '<span class="codicon codicon-server"></span>',
+            'remote': '<span class="codicon codicon-internet"></span>'
         };
-        return icons[locationType] || '<i class="t-icon t-icon-folder"></i>';
+        return icons[locationType] || '<span class="codicon codicon-folder"></span>';
     }
 
     function getTypeIcon(type) {
         const icons = {
-            'workspace': '<i class="t-icon t-icon-folder-open"></i>',
-            'folder': '<i class="t-icon t-icon-folder"></i>'
+            'workspace': '<span class="codicon codicon-folder-open"></span>',
+            'folder': '<span class="codicon codicon-folder"></span>'
         };
-        return icons[type] || '<i class="t-icon t-icon-folder"></i>';
+        return icons[type] || '<span class="codicon codicon-folder"></span>';
     }
 
     function formatLastOpened(dateString) {
