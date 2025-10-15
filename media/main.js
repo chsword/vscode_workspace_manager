@@ -201,51 +201,27 @@
     // Render tag filters
     function renderTagFilters() {
         if (!currentTags.length) {
-            tagFilters.innerHTML = '';
+            tagFilters.innerHTML = '<div style="font-size: 11px; color: var(--vscode-descriptionForeground); text-align: center; padding: 8px;">No tags available</div>';
             return;
         }
 
         // Sort tags by usage count
         const sortedTags = [...currentTags].sort((a, b) => b.usageCount - a.usageCount);
-        
-        const systemTags = sortedTags.filter(tag => tag.isSystem);
-        const customTags = sortedTags.filter(tag => !tag.isSystem);
 
-        let html = '';
-        
-        if (systemTags.length > 0) {
-            html += '<div style="font-size: 10px; color: var(--vscode-descriptionForeground); margin-bottom: 4px;">System Tags:</div>';
-            html += '<div class="tag-container">';
-            systemTags.forEach(tag => {
-                const isSelected = currentFilter.tags.includes(tag.name);
-                html += `
-                    <span class="tag-chip ${isSelected ? 'selected' : ''}" 
-                          data-tag="${tag.name}" 
-                          style="background-color: ${tag.color}20; color: ${tag.color};"
-                          title="${tag.description || tag.name}">
-                        <span class="tag-text">${tag.name}${tag.usageCount > 0 ? ` (${tag.usageCount})` : ''}</span>
-                    </span>
-                `;
-            });
-            html += '</div>';
-        }
-
-        if (customTags.length > 0) {
-            html += '<div style="font-size: 10px; color: var(--vscode-descriptionForeground); margin: 8px 0 4px;">Custom Tags:</div>';
-            html += '<div class="tag-container">';
-            customTags.forEach(tag => {
-                const isSelected = currentFilter.tags.includes(tag.name);
-                html += `
-                    <span class="tag-chip ${isSelected ? 'selected' : ''}" 
-                          data-tag="${tag.name}" 
-                          style="background-color: ${tag.color}20; color: ${tag.color};"
-                          title="${tag.description || tag.name}">
-                        <span class="tag-text">${tag.name}${tag.usageCount > 0 ? ` (${tag.usageCount})` : ''}</span>
-                    </span>
-                `;
-            });
-            html += '</div>';
-        }
+        let html = '<div class="tag-container">';
+        sortedTags.forEach(tag => {
+            const isSelected = currentFilter.tags.includes(tag.name);
+            const tagIcon = tag.isSystem ? '🔖' : '🏷️';
+            html += `
+                <span class="tag-chip ${isSelected ? 'selected' : ''}" 
+                      data-tag="${tag.name}" 
+                      style="background-color: ${tag.color}15; color: ${tag.color}; border-color: ${tag.color};"
+                      title="${tag.description || tag.name}${tag.isSystem ? ' (System)' : ''}">
+                    <span class="tag-text">${tagIcon} ${tag.name}${tag.usageCount > 0 ? ` (${tag.usageCount})` : ''}</span>
+                </span>
+            `;
+        });
+        html += '</div>';
 
         tagFilters.innerHTML = html;
 
@@ -345,6 +321,8 @@
 
         // Add event listeners
         workspaceList.querySelectorAll('.workspace-item').forEach(item => {
+            const workspaceId = item.dataset.workspaceId;
+            
             item.addEventListener('click', (e) => {
                 // Only handle clicks on the item itself, not on action buttons
                 if (e.target.closest('.workspace-actions') || e.target.closest('.action-btn')) {
@@ -357,8 +335,29 @@
 
             item.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
-                showContextMenu(e, item.dataset.workspaceId);
+                showContextMenu(e, workspaceId);
             });
+
+            // 双击编辑描述
+            const descriptionEl = item.querySelector('.workspace-description');
+            if (descriptionEl) {
+                descriptionEl.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    makeDescriptionEditable(descriptionEl, workspaceId);
+                });
+            }
+
+            // 双击编辑标签
+            const tagsContainer = item.querySelector('.workspace-location-and-tags');
+            if (tagsContainer) {
+                const tags = tagsContainer.querySelectorAll('.workspace-tag-inline');
+                tags.forEach(tag => {
+                    tag.addEventListener('dblclick', (e) => {
+                        e.stopPropagation();
+                        handleWorkspaceAction('editTags', workspaceId);
+                    });
+                });
+            }
         });
 
         // Add action button listeners
@@ -369,6 +368,64 @@
                 const workspaceId = btn.closest('.workspace-item').dataset.workspaceId;
                 handleWorkspaceAction(action, workspaceId);
             });
+        });
+    }
+
+    // 使描述可编辑
+    function makeDescriptionEditable(element, workspaceId) {
+        const currentText = element.textContent.replace(/^"|"$/g, '').trim();
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = currentText;
+        input.className = 'workspace-description editing';
+        input.style.width = '100%';
+        input.style.fontFamily = 'inherit';
+        input.style.fontSize = 'inherit';
+        input.style.color = 'inherit';
+        
+        element.replaceWith(input);
+        input.focus();
+        input.select();
+
+        const save = () => {
+            const newText = input.value.trim();
+            if (newText !== currentText) {
+                // 发送更新请求
+                vscode.postMessage({
+                    type: 'updateDescription',
+                    id: workspaceId,
+                    description: newText
+                });
+            }
+            
+            const newDesc = document.createElement('div');
+            newDesc.className = 'workspace-description';
+            newDesc.textContent = newText ? `"${newText}"` : '';
+            input.replaceWith(newDesc);
+            
+            // 重新添加双击事件
+            newDesc.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                makeDescriptionEditable(newDesc, workspaceId);
+            });
+        };
+
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                save();
+            } else if (e.key === 'Escape') {
+                const newDesc = document.createElement('div');
+                newDesc.className = 'workspace-description';
+                newDesc.textContent = currentText ? `"${currentText}"` : '';
+                input.replaceWith(newDesc);
+                
+                newDesc.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    makeDescriptionEditable(newDesc, workspaceId);
+                });
+            }
         });
     }
 

@@ -134,6 +134,10 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
                     await this.workspaceManager.editDescription(data.id);
                     break;
 
+                case 'updateDescription':
+                    await this.workspaceManager.updateDescription(data.id, data.description);
+                    break;
+
                 case 'removeWorkspace':
                     await this.workspaceManager.removeWorkspace(data.id);
                     break;
@@ -240,21 +244,21 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
         </div>
 
         <div class="filters">
-            <div class="location-filters">
+            <div class="location-filters" data-label="📍 位置:">
                 <button class="filter-btn active" data-location="all">All</button>
-                <button class="filter-btn" data-location="local">📂 Local</button>
+                <button class="filter-btn" data-location="local">� Local</button>
                 <button class="filter-btn" data-location="wsl">🐧 WSL</button>
                 <button class="filter-btn" data-location="remote">🌐 Remote</button>
             </div>
 
-            <div class="type-filters">
-                <button class="type-btn active" data-type="all">📄 All Types</button>
+            <div class="type-filters" data-label="📂 类型:">
+                <button class="type-btn active" data-type="all">All Types</button>
                 <button class="type-btn" data-type="workspace">📋 Workspace</button>
                 <button class="type-btn" data-type="folder">📁 Folder</button>
             </div>
 
-            <div class="view-filters">
-                <button class="view-btn active" data-view="all">📁 All</button>
+            <div class="view-filters" data-label="👁️ 视图:">
+                <button class="view-btn active" data-view="all">All</button>
                 <button class="view-btn" data-view="recent">📋 Recent</button>
                 <button class="view-btn" data-view="favorites">⭐ Favorites</button>
                 <button class="view-btn" data-view="pinned">📌 Pinned</button>
@@ -262,6 +266,7 @@ export class WorkspaceWebviewProvider implements vscode.WebviewViewProvider {
         </div>
 
         <div class="tag-filters">
+            <div class="tag-filters-header">TAGS</div>
             <div id="tagFilters"></div>
         </div>
 

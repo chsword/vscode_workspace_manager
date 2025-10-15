@@ -1501,26 +1501,8 @@ export class WorkspaceSyncService {
                 }
             }
             
-            // 3. 尝试从最近使用的文件夹推断
-            try {
-                const recentFiles = await vscode.window.showOpenDialog({
-                    canSelectFiles: false,
-                    canSelectFolders: true,
-                    canSelectMany: false,
-                    title: '选择工作区文件夹（取消以跳过）'
-                });
-                
-                if (recentFiles && recentFiles.length > 0) {
-                    const folderPath = recentFiles[0].fsPath;
-                    const workspaceItem = await this.createWorkspaceItem(folderPath);
-                    if (workspaceItem && !workspaces.some(w => w.path === workspaceItem.path)) {
-                        workspaces.push(workspaceItem);
-                    }
-                }
-            } catch (error) {
-                // 用户取消或其他错误，忽略
-                console.warn('用户跳过手动选择文件夹');
-            }
+            // 3. 已移除自动弹出文件选择对话框的逻辑
+            // 如果用户需要手动添加工作区，可以使用 "Add Workspace" 命令
             
             console.log(`Fallback方法收集到 ${workspaces.length} 个工作区`);
             

@@ -527,6 +527,20 @@ export class WorkspaceManager {
     }
 
     /**
+     * Update workspace description directly (from webview inline editing)
+     */
+    async updateDescription(id: string, description: string): Promise<void> {
+        const workspace = await this.getWorkspace(id);
+        if (!workspace) {
+            return;
+        }
+
+        workspace.description = description;
+        await this.storage.saveWorkspace(workspace);
+        this.fireWorkspacesChanged();
+    }
+
+    /**
      * Remove workspace from list
      */
     async removeWorkspace(id: string): Promise<void> {
