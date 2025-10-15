@@ -172,6 +172,13 @@ export class Workspace {
     // Business logic methods
 
     /**
+     * Update workspace name
+     */
+    updateName(name: WorkspaceName): void {
+        this._name = name;
+    }
+
+    /**
      * Mark workspace as favorite
      */
     markAsFavorite(): void {

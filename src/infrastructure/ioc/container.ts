@@ -8,6 +8,17 @@ import { ITagRepository } from '@core/domain/repositories/ITagRepository';
 import { VSCodeWorkspaceRepository } from '../repositories/VSCodeWorkspaceRepository';
 import { VSCodeTagRepository } from '../repositories/VSCodeTagRepository';
 import { WorkspaceStorage } from '../../storage/workspaceStorage';
+import { IWorkspaceDomainRepository, WorkspaceDomainRepositoryAdapter } from '@core/application/adapters/WorkspaceDomainRepositoryAdapter';
+import { 
+  GetWorkspacesUseCase,
+  GetWorkspaceByIdUseCase,
+  CreateWorkspaceUseCase,
+  UpdateWorkspaceUseCase,
+  DeleteWorkspaceUseCase,
+  ToggleFavoriteUseCase,
+  TogglePinUseCase,
+  SyncWorkspacesUseCase
+} from '@core/application/use-cases';
 
 /**
  * Configure the dependency injection container
@@ -26,13 +37,22 @@ export function configureContainer(context: vscode.ExtensionContext): void {
   container.registerSingleton<IWorkspaceRepository>('IWorkspaceRepository', VSCodeWorkspaceRepository);
   container.registerSingleton<ITagRepository>('ITagRepository', VSCodeTagRepository);
 
+  // Register Domain Repository Adapters
+  container.registerSingleton<IWorkspaceDomainRepository>('IWorkspaceDomainRepository', WorkspaceDomainRepositoryAdapter);
+
+  // Register Use Cases
+  container.registerSingleton('GetWorkspacesUseCase', GetWorkspacesUseCase);
+  container.registerSingleton('GetWorkspaceByIdUseCase', GetWorkspaceByIdUseCase);
+  container.registerSingleton('CreateWorkspaceUseCase', CreateWorkspaceUseCase);
+  container.registerSingleton('UpdateWorkspaceUseCase', UpdateWorkspaceUseCase);
+  container.registerSingleton('DeleteWorkspaceUseCase', DeleteWorkspaceUseCase);
+  container.registerSingleton('ToggleFavoriteUseCase', ToggleFavoriteUseCase);
+  container.registerSingleton('TogglePinUseCase', TogglePinUseCase);
+  container.registerSingleton('SyncWorkspacesUseCase', SyncWorkspacesUseCase);
+
   // TODO: Register adapters when implemented
   // container.registerSingleton('SQLiteAdapter', SQLiteAdapter);
   // container.registerSingleton('IHistoryAdapter', VSCodeHistoryAdapter);
-
-  // TODO: Register use cases when implemented
-  // container.registerSingleton('GetWorkspaces', GetWorkspaces);
-  // container.registerSingleton('CreateWorkspace', CreateWorkspace);
 
   // TODO: Register presentation services when implemented
   // container.registerSingleton('WorkspaceCommands', WorkspaceCommands);

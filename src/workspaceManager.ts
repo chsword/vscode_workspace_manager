@@ -2,13 +2,53 @@ import * as vscode from 'vscode';
 import { WorkspaceItem, WorkspaceFilter, Tag } from './types';
 import { WorkspaceStorage } from './storage/workspaceStorage';
 import { WorkspaceSyncService } from './services/workspaceSyncService';
+import { container } from 'tsyringe';
+import {
+    GetWorkspacesUseCase,
+    GetWorkspaceByIdUseCase,
+    UpdateWorkspaceUseCase,
+    DeleteWorkspaceUseCase,
+    ToggleFavoriteUseCase,
+    TogglePinUseCase
+} from '@core/application/use-cases';
+import { ILogger } from '@infrastructure/logging/ILogger';
 
 /**
  * Main workspace manager class that coordinates all workspace operations
+ * Refactored to use Use Cases for business logic
  */
 export class WorkspaceManager {
     private readonly eventEmitter = new vscode.EventEmitter<WorkspaceItem[]>();
     public readonly onWorkspacesChanged = this.eventEmitter.event;
+
+    // Use Cases (lazy-initialized from IoC container)
+    private get getWorkspacesUseCase(): GetWorkspacesUseCase {
+        return container.resolve('GetWorkspacesUseCase');
+    }
+
+    private get getWorkspaceByIdUseCase(): GetWorkspaceByIdUseCase {
+        return container.resolve('GetWorkspaceByIdUseCase');
+    }
+
+    private get updateWorkspaceUseCase(): UpdateWorkspaceUseCase {
+        return container.resolve('UpdateWorkspaceUseCase');
+    }
+
+    private get deleteWorkspaceUseCase(): DeleteWorkspaceUseCase {
+        return container.resolve('DeleteWorkspaceUseCase');
+    }
+
+    private get toggleFavoriteUseCase(): ToggleFavoriteUseCase {
+        return container.resolve('ToggleFavoriteUseCase');
+    }
+
+    private get togglePinUseCase(): TogglePinUseCase {
+        return container.resolve('TogglePinUseCase');
+    }
+
+    private get logger(): ILogger {
+        return container.resolve('ILogger');
+    }
 
     constructor(
         private readonly storage: WorkspaceStorage,

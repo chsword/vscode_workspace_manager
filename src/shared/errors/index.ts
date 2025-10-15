@@ -139,3 +139,13 @@ export class ApplicationError extends BaseError {
     );
   }
 }
+
+/**
+ * Repository error - alias for StorageError for domain layer
+ * Use this in Use Cases and Domain services
+ */
+export class RepositoryError extends StorageError {
+  constructor(message: string, context?: Record<string, unknown>) {
+    super(message, context);
+  }
+}
